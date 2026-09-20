@@ -845,6 +845,58 @@ MonoBehaviour:
   edgeMargin: 1
   maxSteerAngle: 20
   turnSharpness: 12
+--- !u!1 &1802903150
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1802903152}
+  - component: {fileID: 1802903151}
+  m_Layer: 0
+  m_Name: ObstacleSpawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1802903151
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1802903150}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a510265ee40b1e240b0c7779ae29405c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ObstacleSpawner
+  road: {fileID: 371121412}
+  car: {fileID: 1633598803}
+  obstaclePrefab: {fileID: 4200094951286172899, guid: 0b829b2c5d217e3468a3ad9cd195d43d, type: 3}
+  spawnDistance: 80
+  minSpacing: 8
+  maxSpacing: 20
+  edgeMargin: 1
+  despawnDistance: 15
+--- !u!4 &1802903152
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1802903150}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1.30002, y: -0, z: 8.69359}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1973223333
 GameObject:
   m_ObjectHideFlags: 0
@@ -961,3 +1013,4 @@ SceneRoots:
   - {fileID: 1633598803}
   - {fileID: 371121413}
   - {fileID: 135781699}
+  - {fileID: 1802903152}
