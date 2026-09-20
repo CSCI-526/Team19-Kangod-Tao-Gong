@@ -1,14 +1,13 @@
+using System.Collections.Generic;
 using UnityEngine;
 
+[ExecuteAlways]
 [DisallowMultipleComponent]
+[RequireComponent(typeof(RoadSegment), typeof(MeshFilter), typeof(MeshRenderer))]
 public sealed class RoadMarking : MonoBehaviour
 {
     private const int LaneCount = 3;
-
-    [Header("References")]
-    [SerializeField] private RoadSegment road;
-    [SerializeField] private GameObject stripMarking;
-    [SerializeField] private Material stripMaterial;
+    private const string MeshName = "RoadMarkingMesh";
 
     [Header("Strip Settings")]
     [SerializeField, Min(0.01f)] private float stripWidth = 0.15f;
@@ -16,112 +15,126 @@ public sealed class RoadMarking : MonoBehaviour
     [SerializeField, Min(0f)] private float gapLength = 2f;
     [SerializeField, Min(0f)] private float height = 0.01f;
 
-    private void Awake()
-    {
-        GenerateMarkings();
-    }
+    private readonly List<Vector3> vertices = new List<Vector3>();
+    private readonly List<Vector2> uvs = new List<Vector2>();
+    private readonly List<int> triangles = new List<int>();
 
     private void Reset()
     {
-        road = GetComponentInParent<RoadSegment>();
+        GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
     }
 
-    private void GenerateMarkings()
+    private void OnEnable()
     {
-        if (!HasValidSetup() || !TryGetStripScale(out Vector3 stripScale))
+        if (GetComponent<MeshFilter>().sharedMesh == null)
+        {
+            Rebuild();
+        }
+    }
+
+    private void OnValidate()
+    {
+        Rebuild();
+    }
+
+    private void OnDestroy()
+    {
+        MeshFilter filter = GetComponent<MeshFilter>();
+
+        if (filter == null || filter.sharedMesh == null || filter.sharedMesh.name != MeshName)
         {
             return;
         }
 
-        Transform holder = new GameObject("RoadMarkings").transform;
-        holder.SetParent(road.transform, false);
-
-        float pathLength = GetPathLength();
-        float spacing = stripLength + gapLength;
-        float dividerOffset = road.Width / LaneCount * 0.5f;
-        int stripCount = Mathf.FloorToInt((pathLength - stripLength) / spacing + 0.0001f) + 1;
-
-        for (int i = 0; i < stripCount; i++)
+        if (Application.isPlaying)
         {
-            RoadPathPoint point = SamplePath(i * spacing + stripLength * 0.5f);
-
-            CreateStrip(holder, point, -dividerOffset, stripScale);
-            CreateStrip(holder, point, dividerOffset, stripScale);
+            Destroy(filter.sharedMesh);
+        }
+        else
+        {
+            DestroyImmediate(filter.sharedMesh);
         }
     }
 
-    private bool HasValidSetup()
+    [ContextMenu("Rebuild Markings")]
+    private void Rebuild()
     {
-        if (road == null)
+        if (!gameObject.scene.IsValid())
         {
-            LogError("road segment reference is missing.");
-            return false;
+            return;
         }
+
+        RoadSegment road = GetComponent<RoadSegment>();
+        Mesh mesh = GetOrCreateMesh(GetComponent<MeshFilter>());
+        mesh.Clear();
 
         if (!road.IsConfigured)
         {
-            LogError("the road segment is missing its start point, end point or a waypoint.", road);
-            return false;
+            return;
         }
 
-        if (stripMarking == null)
+        vertices.Clear();
+        uvs.Clear();
+        triangles.Clear();
+
+        float spacing = stripLength + gapLength;
+        float dividerOffset = road.Width / LaneCount * 0.5f;
+        int stripCount = Mathf.Max(0, Mathf.FloorToInt((GetPathLength(road) - stripLength) / spacing + 0.0001f) + 1);
+
+        for (int i = 0; i < stripCount; i++)
         {
-            LogError("strip plane prefab reference is missing.");
-            return false;
+            RoadPathPoint point = SamplePath(road, i * spacing + stripLength * 0.5f);
+
+            AddStrip(point, -dividerOffset);
+            AddStrip(point, dividerOffset);
         }
 
-        return true;
+        mesh.SetVertices(vertices);
+        mesh.SetUVs(0, uvs);
+        mesh.SetTriangles(triangles, 0);
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
     }
 
-    private bool TryGetStripScale(out Vector3 scale)
+    private void AddStrip(RoadPathPoint point, float lateralOffset)
     {
-        scale = Vector3.zero;
+        Vector3 center = point.Position + point.Right * lateralOffset + point.Up * height;
+        Vector3 halfWidth = point.Right * (stripWidth * 0.5f);
+        Vector3 halfLength = point.Forward * (stripLength * 0.5f);
+        int first = vertices.Count;
 
-        if (!stripMarking.TryGetComponent(out MeshFilter meshFilter) || meshFilter.sharedMesh == null)
-        {
-            LogError("the strip plane prefab needs a MeshFilter with a mesh.", stripMarking);
-            return false;
-        }
+        vertices.Add(transform.InverseTransformPoint(center - halfWidth - halfLength));
+        vertices.Add(transform.InverseTransformPoint(center + halfWidth - halfLength));
+        vertices.Add(transform.InverseTransformPoint(center + halfWidth + halfLength));
+        vertices.Add(transform.InverseTransformPoint(center - halfWidth + halfLength));
 
-        Vector3 meshSize = meshFilter.sharedMesh.bounds.size;
+        uvs.Add(new Vector2(0f, 0f));
+        uvs.Add(new Vector2(1f, 0f));
+        uvs.Add(new Vector2(1f, 1f));
+        uvs.Add(new Vector2(0f, 1f));
 
-        if (meshSize.x <= Mathf.Epsilon || meshSize.z <= Mathf.Epsilon)
-        {
-            LogError("the strip plane mesh has no width or length.", stripMarking);
-            return false;
-        }
-
-        scale = new Vector3(stripWidth / meshSize.x, 1f, stripLength / meshSize.z);
-        return true;
+        triangles.Add(first);
+        triangles.Add(first + 3);
+        triangles.Add(first + 2);
+        triangles.Add(first);
+        triangles.Add(first + 2);
+        triangles.Add(first + 1);
     }
 
-    private void CreateStrip(Transform parent, RoadPathPoint point, float lateralOffset, Vector3 scale)
+    private static Mesh GetOrCreateMesh(MeshFilter filter)
     {
-        GameObject strip = Instantiate(stripMarking, parent);
+        Mesh mesh = filter.sharedMesh;
 
-        Transform stripTransform = strip.transform;
-        stripTransform.SetPositionAndRotation(
-            point.Position + point.Right * lateralOffset + point.Up * height,
-            Quaternion.LookRotation(point.Forward, point.Up));
-        stripTransform.localScale = scale;
-
-        if (strip.TryGetComponent(out Renderer stripRenderer))
+        if (mesh == null || mesh.name != MeshName)
         {
-            stripRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-
-            if (stripMaterial != null)
-            {
-                stripRenderer.sharedMaterial = stripMaterial;
-            }
+            mesh = new Mesh { name = MeshName, hideFlags = HideFlags.HideAndDontSave };
+            filter.sharedMesh = mesh;
         }
 
-        if (strip.TryGetComponent(out Collider stripCollider))
-        {
-            Destroy(stripCollider);
-        }
+        return mesh;
     }
 
-    private float GetPathLength()
+    private static float GetPathLength(RoadSegment road)
     {
         float length = 0f;
         Vector3 from = road.GetPathPoint(0);
@@ -136,7 +149,7 @@ public sealed class RoadMarking : MonoBehaviour
         return length;
     }
 
-    private RoadPathPoint SamplePath(float distance)
+    private static RoadPathPoint SamplePath(RoadSegment road, float distance)
     {
         Vector3 from = road.GetPathPoint(0);
         Vector3 direction = Vector3.forward;
@@ -164,10 +177,5 @@ public sealed class RoadMarking : MonoBehaviour
         }
 
         return new RoadPathPoint(from, direction, road.Width);
-    }
-
-    private void LogError(string message, Object context = null)
-    {
-        Debug.LogError($"{nameof(RoadMarking)}: {message}", context != null ? context : this);
     }
 }
