@@ -29,7 +29,17 @@ public sealed class HandleCrash : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (restarting || obstacles == null || !other.transform.IsChildOf(obstacles.transform))
+        if (obstacles == null || !other.transform.IsChildOf(obstacles.transform))
+        {
+            return;
+        }
+
+        Crash();
+    }
+
+    public void Crash()
+    {
+        if (restarting)
         {
             return;
         }

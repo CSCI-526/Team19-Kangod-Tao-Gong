@@ -23,6 +23,8 @@ public sealed class AutoDriveCar : MonoBehaviour
     private float lateralSpeed;
     private float heightOffset;
 
+    public float SteerInput { get; private set; }
+
     private void Awake()
     {
         steerAction = CreateSteerAction();
@@ -61,6 +63,7 @@ public sealed class AutoDriveCar : MonoBehaviour
     {
         float deltaTime = Time.deltaTime;
         float steerInput = Mathf.Clamp(steerAction.ReadValue<float>(), -1f, 1f);
+        SteerInput = steerInput;
 
         lateralSpeed = Mathf.MoveTowards(lateralSpeed, steerInput * maxLateralSpeed, lateralAcceleration * deltaTime);
 
