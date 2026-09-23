@@ -27,14 +27,21 @@ public sealed class HandleCrash : MonoBehaviour
         GetComponent<BoxCollider>().isTrigger = true;
     }
 
-    private void OnTriggerEnter(Collider other)
+    public void Crash()
     {
-        if (restarting || obstacles == null || !other.transform.IsChildOf(obstacles.transform))
+        if (restarting)
         {
             return;
         }
-
         restarting = true;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+    private void OnTriggerEnter(Collider other)
+    {
+        if (obstacles == null || !other.transform.IsChildOf(obstacles.transform))
+        {
+            return;
+        }
+        Crash();
     }
 }
