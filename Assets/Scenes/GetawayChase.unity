@@ -618,6 +618,25 @@ MonoBehaviour:
   car: {fileID: 1633598803}
   label: {fileID: 428933350}
   pointsPerUnit: 1
+--- !u!1 &552656298 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6656971232262829668, guid: 513a0b715227ac64096147a4d6382be4, type: 3}
+  m_PrefabInstance: {fileID: 1040437246}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &552656303
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 552656298}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34b94f843599b482b80200bb1e091d2b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FuelTank
+  maxFuel: 100
+  consumptionPerSecond: 4
 --- !u!1 &778301355 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8481174214447707493, guid: 513a0b715227ac64096147a4d6382be4, type: 3}
@@ -742,6 +761,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 8481174214447707493, guid: 513a0b715227ac64096147a4d6382be4, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1092099605}
+    - targetCorrespondingSourceObject: {fileID: 6656971232262829668, guid: 513a0b715227ac64096147a4d6382be4, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 552656303}
   m_SourcePrefab: {fileID: 100100000, guid: 513a0b715227ac64096147a4d6382be4, type: 3}
 --- !u!1 &1066005397
 GameObject:
@@ -977,6 +999,66 @@ Transform:
   - {fileID: 135781699}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1213715773
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1213715775}
+  - component: {fileID: 1213715774}
+  m_Layer: 0
+  m_Name: FuelTankSpawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1213715774
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1213715773}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07248f9b26bcc426d8e30cef64cb987b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FuelTankSpawner
+  road: {fileID: 371121412}
+  car: {fileID: 1633598803}
+  fuelTankPrefab: {fileID: 4200094951286172899, guid: 7ce22138b2b734ee59dfcce4a37622cb, type: 3}
+  spawnDistance: 80
+  minSpacing: 60
+  maxSpacing: 180
+  doubleRowChance: 0
+  minRowSeparation: 60
+  edgeMargin: 1
+  despawnDistance: 15
+  clearanceRadius: 3
+  placementAttempts: 8
+  retrySpacing: 5
+  bobHeight: 0.35
+  bobSpeed: 2.5
+  flipSpeed: 90
+--- !u!4 &1213715775
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1213715773}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -1.57915, y: -0, z: 2.51364}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1551234747
 GameObject:
   m_ObjectHideFlags: 0
@@ -1092,6 +1174,7 @@ GameObject:
   - component: {fileID: 1633598807}
   - component: {fileID: 1633598806}
   - component: {fileID: 1633598805}
+  - component: {fileID: 1633598808}
   m_Layer: 0
   m_Name: PlayerCar
   m_TagString: Untagged
@@ -1149,6 +1232,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HandleCrash
   obstacles: {fileID: 1802903151}
+  fuelTankFuel: 40
 --- !u!65 &1633598806
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1197,6 +1281,20 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &1633598808
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1633598799}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34b94f843599b482b80200bb1e091d2b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FuelTank
+  maxFuel: 100
+  consumptionPerSecond: 4
 --- !u!1 &1802903150
 GameObject:
   m_ObjectHideFlags: 0
@@ -1236,6 +1334,7 @@ MonoBehaviour:
   minRowSeparation: 3
   edgeMargin: 1
   despawnDistance: 15
+  pickupClearance: 3
 --- !u!4 &1802903152
 Transform:
   m_ObjectHideFlags: 0
@@ -1432,3 +1531,4 @@ SceneRoots:
   - {fileID: 1152754208}
   - {fileID: 1802903152}
   - {fileID: 1817119414}
+  - {fileID: 1213715775}

@@ -21,10 +21,14 @@ public sealed class ObstacleSpawner : MonoBehaviour
     [SerializeField, Min(0f)] private float edgeMargin = 1f;
     [SerializeField, Min(0f)] private float despawnDistance = 15f;
 
+    [Header("Clearance")]
+    [SerializeField, Min(0f)] private float pickupClearance = 1.5f;
+
     private readonly List<Obstacle> activeObstacles = new List<Obstacle>();
     private ObjectPool<Obstacle> pool;
     private Vector3 previousCarPosition;
     private float distanceUntilSpawn;
+    private readonly Collider[] overlapBuffer = new Collider[16];
 
     private void Awake()
     {
@@ -94,6 +98,9 @@ public sealed class ObstacleSpawner : MonoBehaviour
         }
 
         float limit = Mathf.Max(0f, point.Width * 0.5f - edgeMargin);
+
+        Physics.SyncTransforms();
+
         float firstOffset = Random.Range(-limit, limit);
 
         PlaceObstacle(point, firstOffset);
@@ -106,6 +113,11 @@ public sealed class ObstacleSpawner : MonoBehaviour
 
     private void PlaceObstacle(RoadPathPoint point, float lateralOffset)
     {
+        if (OverlapsPickup(point.Position + point.Right * lateralOffset))
+        {
+            return;
+        }
+
         Obstacle obstacle = pool.Get();
         obstacle.Transform.rotation = Quaternion.LookRotation(point.Forward, point.Up);
 
@@ -113,6 +125,26 @@ public sealed class ObstacleSpawner : MonoBehaviour
         obstacle.Transform.position = point.Position + point.Right * lateralOffset + point.Up * halfHeight;
 
         activeObstacles.Add(obstacle);
+    }
+
+    private bool OverlapsPickup(Vector3 position)
+    {
+        int count = Physics.OverlapSphereNonAlloc(
+            position,
+            pickupClearance,
+            overlapBuffer,
+            ~0,
+            QueryTriggerInteraction.Collide);
+
+        for (int i = 0; i < count; i++)
+        {
+            if (overlapBuffer[i].GetComponentInParent<FuelTankSpawner>() != null)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private float GetSecondOffset(float firstOffset, float limit)
