@@ -5,11 +5,25 @@ using UnityEngine.SceneManagement;
 [RequireComponent(typeof(Rigidbody), typeof(BoxCollider))]
 public sealed class HandleCrash : MonoBehaviour
 {
+    [Header("References")]
     [SerializeField] private ObstacleSpawner obstacles;
     [SerializeField] private ChaseMeter meter;
-    [SerializeField, Range(0f, 1f)] private float crashDrainAmount = 0.5f;
+
+    [Header("Obstacle Collision")]
+    [SerializeField, Range(0f, 1f)]
+    private float crashDrainAmount = 0.5f;
 
     private bool restarting;
+
+    private void Awake()
+    {
+        Rigidbody body = GetComponent<Rigidbody>();
+        body.isKinematic = true;
+        body.useGravity = false;
+
+        BoxCollider box = GetComponent<BoxCollider>();
+        box.isTrigger = true;
+    }
 
     private void Reset()
     {
@@ -17,21 +31,43 @@ public sealed class HandleCrash : MonoBehaviour
         body.isKinematic = true;
         body.useGravity = false;
 
-        Renderer visual = GetComponentInChildren<Renderer>();
+        BoxCollider box = GetComponent<BoxCollider>();
+        box.isTrigger = true;
+
+        Renderer visual =
+            GetComponentInChildren<Renderer>();
 
         if (visual != null)
         {
-            BoxCollider box = GetComponent<BoxCollider>();
-            box.center = transform.InverseTransformPoint(visual.bounds.center);
+            box.center =
+                transform.InverseTransformPoint(
+                    visual.bounds.center
+                );
+
             box.size = visual.bounds.size;
         }
-
-        GetComponent<BoxCollider>().isTrigger = true;
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (obstacles == null || !other.transform.IsChildOf(obstacles.transform))
+        if (restarting)
+        {
+            return;
+        }
+
+        ChaseCar chaseCar =
+            other.GetComponentInParent<ChaseCar>();
+
+        if (chaseCar != null)
+        {
+            Crash();
+            return;
+        }
+
+        if (obstacles == null ||
+            !other.transform.IsChildOf(
+                obstacles.transform
+            ))
         {
             return;
         }
@@ -50,6 +86,9 @@ public sealed class HandleCrash : MonoBehaviour
         }
 
         restarting = true;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+
+        SceneManager.LoadScene(
+            SceneManager.GetActiveScene().buildIndex
+        );
     }
 }

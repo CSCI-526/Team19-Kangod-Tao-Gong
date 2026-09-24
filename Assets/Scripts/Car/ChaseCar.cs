@@ -8,20 +8,34 @@ public sealed class ChaseCar : MonoBehaviour
     [Header("References")]
     [SerializeField] private InfiniteRoad road;
     [SerializeField] private Transform player;
+    [SerializeField] private ChaseMeter meter;
+    [SerializeField] private BoxCollider chaseCollider;
+    [SerializeField] private BoxCollider playerCollider;
 
-    [Header("Following")]
-    [SerializeField, Min(0f)] private float followDistance = 10f;
-    [SerializeField, Min(0f)] private float maxSpeed = 20f;
+    [Header("Movement")]
     [SerializeField, Min(0f)] private float turnSharpness = 8f;
     [SerializeField, Min(0f)] private float edgeMargin = 1f;
 
-    [Header("Weaving")]
-    [SerializeField, Min(0f)] private float weaveAmplitude = 2f;
-    [SerializeField, Min(0.01f)] private float weaveSpeed = 0.5f;
-    [SerializeField] private float weavePhase = 0f;
-
+    private float startingBumperGap;
+    private float relativeLateralOffset;
     private float heightOffset;
 
+    public float DistanceToPlayer { get; private set; }
+
+    private void Awake()
+    {
+        if (chaseCollider == null)
+        {
+            chaseCollider =
+                GetComponentInChildren<BoxCollider>();
+        }
+
+        if (player != null && playerCollider == null)
+        {
+            playerCollider =
+                player.GetComponentInChildren<BoxCollider>();
+        }
+    }
 
     private void Start()
     {
@@ -31,35 +45,271 @@ public sealed class ChaseCar : MonoBehaviour
             return;
         }
 
-        if (road.TryGetPathPoint(transform.position, out RoadPathPoint start))
+        if (!road.TryGetPathPoint(
+                transform.position,
+                out RoadPathPoint chasePoint))
         {
-            heightOffset = Vector3.Dot(transform.position - start.Position, start.Up);
+            LogError("could not find the chase car road position.");
+            enabled = false;
+            return;
+        }
+
+        if (!road.TryGetPathPoint(
+                player.position,
+                out RoadPathPoint playerPoint))
+        {
+            LogError("could not find the player road position.");
+            enabled = false;
+            return;
+        }
+
+        float centerDistance = Vector3.Distance(
+            transform.position,
+            player.position
+        );
+
+        float chaseFrontLength = GetColliderExtent(
+            chaseCollider,
+            chasePoint.Forward
+        );
+
+        float playerBackLength = GetColliderExtent(
+            playerCollider,
+            playerPoint.Forward
+        );
+
+        startingBumperGap = Mathf.Max(
+            0f,
+            centerDistance -
+            chaseFrontLength -
+            playerBackLength
+        );
+
+        Vector3 chaseOffset =
+            transform.position - chasePoint.Position;
+
+        Vector3 playerOffset =
+            player.position - playerPoint.Position;
+
+        float chaseLateralOffset = Vector3.Dot(
+            chaseOffset,
+            chasePoint.Right
+        );
+
+        float playerLateralOffset = Vector3.Dot(
+            playerOffset,
+            playerPoint.Right
+        );
+
+        relativeLateralOffset =
+            chaseLateralOffset -
+            playerLateralOffset;
+
+        heightOffset = Vector3.Dot(
+            chaseOffset,
+            chasePoint.Up
+        );
+
+        IgnoreOtherChaseCars();
+    }
+
+    private void LateUpdate()
+    {
+        if (!road.TryGetPathPoint(
+                player.position,
+                out RoadPathPoint playerPoint))
+        {
+            return;
+        }
+
+        float chaseFrontLength = GetColliderExtent(
+            chaseCollider,
+            playerPoint.Forward
+        );
+
+        float playerBackLength = GetColliderExtent(
+            playerCollider,
+            playerPoint.Forward
+        );
+
+        float bumperGap =
+            startingBumperGap * meter.Value;
+
+        float centerFollowDistance =
+            bumperGap +
+            chaseFrontLength +
+            playerBackLength;
+
+        if (!TryGetPointBehind(
+                playerPoint,
+                centerFollowDistance,
+                out RoadPathPoint target))
+        {
+            return;
+        }
+
+        Vector3 playerOffset =
+            player.position - playerPoint.Position;
+
+        float playerLateralOffset = Vector3.Dot(
+            playerOffset,
+            playerPoint.Right
+        );
+
+        float desiredLateralOffset =
+            playerLateralOffset +
+            relativeLateralOffset;
+
+        float limit = Mathf.Max(
+            0f,
+            target.Width * 0.5f - edgeMargin
+        );
+
+        desiredLateralOffset = Mathf.Clamp(
+            desiredLateralOffset,
+            -limit,
+            limit
+        );
+
+        Vector3 targetPosition =
+            target.Position +
+            target.Right * desiredLateralOffset +
+            target.Up * heightOffset;
+
+        Vector3 movement =
+            targetPosition - transform.position;
+
+        transform.position = targetPosition;
+
+        Vector3 movementDirection =
+            Vector3.ProjectOnPlane(
+                movement,
+                target.Up
+            );
+
+        if (movementDirection.sqrMagnitude < 0.0001f)
+        {
+            movementDirection = target.Forward;
+        }
+        else
+        {
+            movementDirection.Normalize();
+        }
+
+        Quaternion targetRotation =
+            Quaternion.LookRotation(
+                movementDirection,
+                target.Up
+            );
+
+        float blend =
+            1f - Mathf.Exp(
+                -turnSharpness * Time.deltaTime
+            );
+
+        transform.rotation = Quaternion.Slerp(
+            transform.rotation,
+            targetRotation,
+            blend
+        );
+
+        DistanceToPlayer = bumperGap;
+    }
+
+    private float GetColliderExtent(
+        BoxCollider box,
+        Vector3 direction)
+    {
+        Transform boxTransform = box.transform;
+
+        Vector3 scale = boxTransform.lossyScale;
+
+        Vector3 halfSize = new Vector3(
+            box.size.x * Mathf.Abs(scale.x) * 0.5f,
+            box.size.y * Mathf.Abs(scale.y) * 0.5f,
+            box.size.z * Mathf.Abs(scale.z) * 0.5f
+        );
+
+        direction.Normalize();
+
+        return
+            Mathf.Abs(Vector3.Dot(
+                direction,
+                boxTransform.right
+            )) * halfSize.x +
+            Mathf.Abs(Vector3.Dot(
+                direction,
+                boxTransform.up
+            )) * halfSize.y +
+            Mathf.Abs(Vector3.Dot(
+                direction,
+                boxTransform.forward
+            )) * halfSize.z;
+    }
+
+    private void IgnoreOtherChaseCars()
+    {
+        Collider[] ownColliders =
+            GetComponentsInChildren<Collider>();
+
+        ChaseCar[] chaseCars =
+            FindObjectsByType<ChaseCar>(
+                FindObjectsSortMode.None
+            );
+
+        foreach (ChaseCar chaseCar in chaseCars)
+        {
+            if (chaseCar == this)
+            {
+                continue;
+            }
+
+            Collider[] otherColliders =
+                chaseCar.GetComponentsInChildren<Collider>();
+
+            foreach (Collider ownCollider in ownColliders)
+            {
+                foreach (Collider otherCollider in otherColliders)
+                {
+                    Physics.IgnoreCollision(
+                        ownCollider,
+                        otherCollider
+                    );
+                }
+            }
         }
     }
 
-    private void Update()
+    private bool TryGetPointBehind(
+        RoadPathPoint from,
+        float distance,
+        out RoadPathPoint result)
     {
-        if (!road.TryGetPathPoint(player.position, out RoadPathPoint playerPoint))
+        result = from;
+        float travelled = 0f;
+
+        while (travelled < distance)
         {
-            return;
+            float step = Mathf.Min(
+                SampleStep,
+                distance - travelled
+            );
+
+            Vector3 samplePosition =
+                result.Position -
+                result.Forward * step;
+
+            if (!road.TryGetPathPoint(
+                    samplePosition,
+                    out result))
+            {
+                return false;
+            }
+
+            travelled += step;
         }
 
-        if (!TryGetPointBehind(playerPoint, followDistance, out RoadPathPoint target))
-        {
-            return;
-        }
-
-        float weave = Mathf.Sin((Time.time + weavePhase) * weaveSpeed) * weaveAmplitude;
-        float limit = Mathf.Max(0f, target.Width * 0.5f - edgeMargin);
-        float lateralOffset = Mathf.Clamp(weave, -limit, limit);
-
-        Vector3 targetPosition = target.Position + target.Right * lateralOffset + target.Up * heightOffset;
-        transform.position = Vector3.MoveTowards(transform.position, targetPosition, maxSpeed * Time.deltaTime);
-
-        Quaternion targetRotation = Quaternion.LookRotation(target.Forward, target.Up);
-        float blend = 1f - Mathf.Exp(-turnSharpness * Time.deltaTime);
-        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, blend);
-
+        return true;
     }
 
     private bool HasValidSetup()
@@ -76,24 +326,22 @@ public sealed class ChaseCar : MonoBehaviour
             return false;
         }
 
-        return true;
-    }
-
-    private bool TryGetPointBehind(RoadPathPoint from, float distance, out RoadPathPoint result)
-    {
-        result = from;
-        float travelled = 0f;
-
-        while (travelled < distance)
+        if (meter == null)
         {
-            float step = Mathf.Min(SampleStep, distance - travelled);
+            LogError("chase meter reference is missing.");
+            return false;
+        }
 
-            if (!road.TryGetPathPoint(result.Position - result.Forward * step, out result))
-            {
-                return false;
-            }
+        if (chaseCollider == null)
+        {
+            LogError("chase car Box Collider is missing.");
+            return false;
+        }
 
-            travelled += step;
+        if (playerCollider == null)
+        {
+            LogError("player Box Collider is missing.");
+            return false;
         }
 
         return true;
@@ -101,6 +349,9 @@ public sealed class ChaseCar : MonoBehaviour
 
     private void LogError(string message)
     {
-        Debug.LogError($"{nameof(ChaseCar)}: {message}", this);
+        Debug.LogError(
+            $"{nameof(ChaseCar)}: {message}",
+            this
+        );
     }
 }

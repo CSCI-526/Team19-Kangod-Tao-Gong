@@ -807,7 +807,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Type: 3
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 0
@@ -929,7 +929,7 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: 656db3482058d5043aa5e6f17a1b1285, type: 2}
     - target: {fileID: 8310387557884137698, guid: 1c048551c4e148c4f9d65c40f8ab9b9e, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 3.2
+      value: 1.81
       objectReference: {fileID: 0}
     - target: {fileID: 8310387557884137698, guid: 1c048551c4e148c4f9d65c40f8ab9b9e, type: 3}
       propertyPath: m_LocalPosition.y
@@ -999,13 +999,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ChaseCar
   road: {fileID: 371121412}
   player: {fileID: 1633598803}
-  followDistance: 10
-  maxSpeed: 20
+  meter: {fileID: 1970884430}
+  chaseCollider: {fileID: 0}
+  playerCollider: {fileID: 0}
   turnSharpness: 8
   edgeMargin: 1
-  weaveAmplitude: 2
-  weaveSpeed: 0.5
-  weavePhase: 0
 --- !u!1001 &1040437246
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1221,7 +1219,7 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: 656db3482058d5043aa5e6f17a1b1285, type: 2}
     - target: {fileID: 8310387557884137698, guid: 1c048551c4e148c4f9d65c40f8ab9b9e, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -2.93
+      value: -1.83
       objectReference: {fileID: 0}
     - target: {fileID: 8310387557884137698, guid: 1c048551c4e148c4f9d65c40f8ab9b9e, type: 3}
       propertyPath: m_LocalPosition.y
@@ -1291,13 +1289,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ChaseCar
   road: {fileID: 371121412}
   player: {fileID: 1633598803}
-  followDistance: 14
-  maxSpeed: 22
-  turnSharpness: 10
+  meter: {fileID: 1970884430}
+  chaseCollider: {fileID: 0}
+  playerCollider: {fileID: 0}
+  turnSharpness: 8
   edgeMargin: 1
-  weaveAmplitude: 2
-  weaveSpeed: 0.5
-  weavePhase: 3
 --- !u!1 &1551234747
 GameObject:
   m_ObjectHideFlags: 0
