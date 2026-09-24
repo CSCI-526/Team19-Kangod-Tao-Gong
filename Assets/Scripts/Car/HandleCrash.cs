@@ -7,8 +7,14 @@ public sealed class HandleCrash : MonoBehaviour
 {
     [SerializeField] private ObstacleSpawner obstacles;
 
-    private bool restarting;
 
+    private bool restarting;
+    private FuelMeter meter;
+
+    private void Awake()
+    {
+        meter = GetComponent<FuelMeter>();
+    }
     private void Reset()
     {
         Rigidbody body = GetComponent<Rigidbody>();
@@ -38,10 +44,20 @@ public sealed class HandleCrash : MonoBehaviour
     }
     private void OnTriggerEnter(Collider other)
     {
+
+        FuelTank tank = other.GetComponent<FuelTank>();
+        if (tank != null)
+        {
+            meter.ChangeFuel(tank.FuelAmount);
+            Destroy(other.gameObject);
+            return;
+        }
         if (obstacles == null || !other.transform.IsChildOf(obstacles.transform))
         {
             return;
         }
+
         Crash();
+
     }
 }

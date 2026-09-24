@@ -31,4 +31,10 @@ public sealed class FuelMeter : MonoBehaviour
             crash.Crash();
         }
     }
+
+    public void ChangeFuel(float amount)
+    {
+        remainingFuel = Mathf.Clamp(remainingFuel + amount, 0f, maxFuel);
+        bar.fillAmount = remainingFuel / maxFuel;
+    }
 }
