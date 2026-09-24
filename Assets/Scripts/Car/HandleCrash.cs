@@ -6,6 +6,8 @@ using UnityEngine.SceneManagement;
 public sealed class HandleCrash : MonoBehaviour
 {
     [SerializeField] private ObstacleSpawner obstacles;
+    [SerializeField] private ChaseMeter meter;
+    [SerializeField, Range(0f, 1f)] private float crashDrainAmount = 0.5f;
 
     private bool restarting;
 
@@ -34,7 +36,10 @@ public sealed class HandleCrash : MonoBehaviour
             return;
         }
 
-        Crash();
+        if (meter != null)
+        {
+            meter.ApplyDrain(crashDrainAmount);
+        }
     }
 
     public void Crash()

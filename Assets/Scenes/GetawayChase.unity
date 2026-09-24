@@ -799,7 +799,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.0006227269, g: 0.9882353, b: 0, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -807,7 +807,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 3
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 0
@@ -1471,6 +1471,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HandleCrash
   obstacles: {fileID: 1802903151}
+  meter: {fileID: 1970884430}
+  crashDrainAmount: 0.5
 --- !u!65 &1633598806
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1552,7 +1554,7 @@ MonoBehaviour:
   car: {fileID: 1633598803}
   obstaclePrefab: {fileID: 4200094951286172899, guid: 0b829b2c5d217e3468a3ad9cd195d43d, type: 3}
   spawnDistance: 80
-  minSpacing: 8
+  minSpacing: 10
   maxSpacing: 20
   doubleRowChance: 0.35
   minRowSeparation: 3
@@ -1635,15 +1637,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ChaseMeter
   player: {fileID: 1633598803}
-  chaseCars:
-  - {fileID: 920425995}
-  - {fileID: 1536843010}
   steerThreshold: 0.15
-  steerGraceTime: 2
-  steerDrainRate: 0.1
-  dangerDistance: 5
-  safeDistance: 20
-  proximityDrainRate: 0.15
+  steerDrainRate: 0.06
+  regenRate: 0.05
 --- !u!4 &1970884431
 Transform:
   m_ObjectHideFlags: 0

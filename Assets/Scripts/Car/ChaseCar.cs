@@ -22,7 +22,6 @@ public sealed class ChaseCar : MonoBehaviour
 
     private float heightOffset;
 
-    public float DistanceToPlayer { get; private set; }
 
     private void Start()
     {
@@ -61,7 +60,6 @@ public sealed class ChaseCar : MonoBehaviour
         float blend = 1f - Mathf.Exp(-turnSharpness * Time.deltaTime);
         transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, blend);
 
-        DistanceToPlayer = Vector3.Distance(transform.position, player.position);
     }
 
     private bool HasValidSetup()
