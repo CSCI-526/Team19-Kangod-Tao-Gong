@@ -14,10 +14,10 @@ public sealed class ObstacleSpawner : MonoBehaviour
 
     [Header("Spawning")]
     [SerializeField, Min(1f)] private float spawnDistance = 80f;
-    [SerializeField, Min(1f)] private float minSpacing = 8;
+    [SerializeField, Min(1f)] private float minSpacing = 12;
     [SerializeField, Min(1f)] private float maxSpacing = 20;
     [SerializeField, Range(0f, 1f)] private float doubleRowChance = 0.35f;
-    [SerializeField, Min(0f)] private float minRowSeparation = 3f;
+    [SerializeField, Min(0f)] private float minRowSeparation = 4f;
     [SerializeField, Min(0f)] private float edgeMargin = 1f;
     [SerializeField, Min(0f)] private float despawnDistance = 15f;
 
