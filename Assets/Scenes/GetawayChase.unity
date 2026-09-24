@@ -152,7 +152,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 1}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &124543779
@@ -552,8 +552,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 300, y: 50}
+  m_AnchoredPosition: {x: 116, y: 0}
+  m_SizeDelta: {x: 400, y: 50}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &428933350
 MonoBehaviour:
@@ -929,7 +929,7 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: 656db3482058d5043aa5e6f17a1b1285, type: 2}
     - target: {fileID: 8310387557884137698, guid: 1c048551c4e148c4f9d65c40f8ab9b9e, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 1.81
+      value: 2.7
       objectReference: {fileID: 0}
     - target: {fileID: 8310387557884137698, guid: 1c048551c4e148c4f9d65c40f8ab9b9e, type: 3}
       propertyPath: m_LocalPosition.y
@@ -1219,7 +1219,7 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: 656db3482058d5043aa5e6f17a1b1285, type: 2}
     - target: {fileID: 8310387557884137698, guid: 1c048551c4e148c4f9d65c40f8ab9b9e, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -1.83
+      value: -2.61
       objectReference: {fileID: 0}
     - target: {fileID: 8310387557884137698, guid: 1c048551c4e148c4f9d65c40f8ab9b9e, type: 3}
       propertyPath: m_LocalPosition.y
@@ -1449,8 +1449,13 @@ MonoBehaviour:
   road: {fileID: 371121412}
   visual: {fileID: 1066005398}
   forwardSpeed: 15
-  maxLateralSpeed: 8
-  lateralAcceleration: 30
+  maximumForwardSpeed: 30
+  speedIncreaseAmount: 0.75
+  speedIncreaseInterval: 30
+  minimumLateralSpeed: 8
+  maximumLateralSpeed: 12
+  minimumLateralAcceleration: 30
+  maximumLateralAcceleration: 45
   edgeMargin: 1
   maxSteerAngle: 20
   turnSharpness: 12
@@ -1550,10 +1555,10 @@ MonoBehaviour:
   car: {fileID: 1633598803}
   obstaclePrefab: {fileID: 4200094951286172899, guid: 0b829b2c5d217e3468a3ad9cd195d43d, type: 3}
   spawnDistance: 80
-  minSpacing: 10
+  minSpacing: 12
   maxSpacing: 20
   doubleRowChance: 0.35
-  minRowSeparation: 3
+  minRowSeparation: 4
   edgeMargin: 1
   despawnDistance: 15
 --- !u!4 &1802903152
@@ -1825,7 +1830,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 529, y: 456.48193}
+  m_AnchoredPosition: {x: 693, y: 456.48193}
   m_SizeDelta: {x: 462.6506, y: 61.686768}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1001 &174006619655762871
