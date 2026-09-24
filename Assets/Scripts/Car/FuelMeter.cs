@@ -1,9 +1,12 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public sealed class FuelMeter : MonoBehaviour
 {
     [SerializeField, Min(0)] private float maxFuel = 100f;
     [SerializeField, Min(0)] private float consumptionPerSecond = 4f;
+
+    [SerializeField] private Image bar;
 
     private float remainingFuel;
     private HandleCrash crash;
@@ -12,19 +15,16 @@ public sealed class FuelMeter : MonoBehaviour
     {
         remainingFuel = maxFuel;
         crash = GetComponent<HandleCrash>();
+        bar.fillAmount = remainingFuel / maxFuel;
 
     }
 
 
     private void Update()
     {
-        int remainingFuelInt = Mathf.FloorToInt(remainingFuel);
         remainingFuel = Mathf.Max(0, remainingFuel - consumptionPerSecond * Time.deltaTime);
-        int newRemainingFuelInt = Mathf.FloorToInt(remainingFuel);
-        if (remainingFuelInt != newRemainingFuelInt)
-        {
-            Debug.Log($"Remaining Fuel: {newRemainingFuelInt}");
-        }
+        bar.fillAmount = remainingFuel / maxFuel;
+
         if (remainingFuel <= 0)
         {
             enabled = false;
