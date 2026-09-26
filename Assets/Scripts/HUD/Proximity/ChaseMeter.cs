@@ -8,6 +8,7 @@ public sealed class ChaseMeter : MonoBehaviour
 
     private AutoDriveCar playerCar;
     private HandleCrash crashHandler;
+    private CarPickupEffects pickupEffects;
 
     [Header("Steering Condition")]
     [SerializeField, Range(0f, 1f)] private float steerThreshold = 0.15f;
@@ -29,6 +30,7 @@ public sealed class ChaseMeter : MonoBehaviour
 
         playerCar = player.GetComponent<AutoDriveCar>();
         crashHandler = player.GetComponent<HandleCrash>();
+        pickupEffects = player.GetComponent<CarPickupEffects>();
 
         if (playerCar == null || crashHandler == null)
         {
@@ -39,6 +41,18 @@ public sealed class ChaseMeter : MonoBehaviour
 
     private void Update()
     {
+        if (pickupEffects != null && pickupEffects.isActiveAndEnabled)
+        {
+            // The recovery model owns the pursuit clock. Keep the existing
+            // 0..1 meter as a presentation layer for ChaseCar and the HUD.
+            Value = pickupEffects.RunState.IsGameOver
+                ? 0f
+                : Mathf.Clamp01(
+                    pickupEffects.RunState.PursuitGap /
+                    RiskRunState.InitialPursuitGap);
+            return;
+        }
+
         float drain = GetSteeringDrain();
 
         if (drain <= 0f)
@@ -63,6 +77,12 @@ public sealed class ChaseMeter : MonoBehaviour
 
     public void ApplyDrain(float amount)
     {
+        if (pickupEffects != null && pickupEffects.isActiveAndEnabled)
+        {
+            pickupEffects.TryCrash();
+            return;
+        }
+
         Value = Mathf.Clamp01(Value - amount);
 
         if (Value <= 0f)

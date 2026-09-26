@@ -26,27 +26,40 @@ public sealed class AutoDriveCar : MonoBehaviour
     [SerializeField, Min(0f)] private float turnSharpness = 12f;
 
     private InputAction steerAction;
+    private CarPickupEffects pickupEffects;
     private float currentForwardSpeed;
     private float speedIncreaseTimer;
     private float lateralOffset;
     private float lateralSpeed;
     private float heightOffset;
+    private bool hasStarted;
 
     public float SteerInput { get; private set; }
     public float ForwardSpeed => currentForwardSpeed;
+    public float BaseForwardSpeed => currentForwardSpeed > 0f
+        ? currentForwardSpeed
+        : Mathf.Min(forwardSpeed, maximumForwardSpeed);
+    public float RoadDistanceTravelled { get; private set; }
+    public bool IsDriveReady { get; private set; }
 
     private void Awake()
     {
         steerAction = CreateSteerAction();
+        pickupEffects = GetComponent<CarPickupEffects>();
     }
 
     private void OnEnable()
     {
         steerAction.Enable();
+        if (hasStarted)
+        {
+            InitializeRoad();
+        }
     }
 
     private void OnDisable()
     {
+        IsDriveReady = false;
         steerAction.Disable();
     }
 
@@ -56,6 +69,12 @@ public sealed class AutoDriveCar : MonoBehaviour
     }
 
     private void Start()
+    {
+        hasStarted = true;
+        InitializeRoad();
+    }
+
+    private void InitializeRoad()
     {
         if (road == null ||
             !road.TryGetPathPoint(
@@ -88,6 +107,7 @@ public sealed class AutoDriveCar : MonoBehaviour
             forwardSpeed,
             maximumForwardSpeed
         );
+        IsDriveReady = true;
     }
 
     private void Update()
@@ -120,13 +140,43 @@ public sealed class AutoDriveCar : MonoBehaviour
             1f
         );
 
+        float forwardDistance = currentForwardSpeed * deltaTime;
+        float accelerationMultiplier = 1f;
+        bool captured = false;
+
+        if (pickupEffects != null && pickupEffects.isActiveAndEnabled)
+        {
+            if (!pickupEffects.SimulationActive)
+            {
+                return;
+            }
+
+            // RiskRunState is the single clock for pursuit, crash slowdown and
+            // effect expiry. Reuse its integrated distance so the car and the
+            // chase model cross the same boundaries on the same frame.
+            forwardDistance = pickupEffects.RunState.LastTickForwardDistance;
+            captured = pickupEffects.RunState.IsGameOver;
+            if (captured && forwardDistance <= 0f)
+            {
+                return;
+            }
+
+            steerInput *= pickupEffects.SteeringMultiplier;
+            accelerationMultiplier = pickupEffects.LateralAccelerationMultiplier;
+        }
+
         SteerInput = steerInput;
 
         lateralSpeed = Mathf.MoveTowards(
             lateralSpeed,
             steerInput * currentMaxLateralSpeed,
-            currentLateralAcceleration * deltaTime
+            currentLateralAcceleration * accelerationMultiplier * deltaTime
         );
+
+        if (captured)
+        {
+            lateralSpeed = 0f;
+        }
 
         if (!road.TryGetPathPoint(
                 transform.position,
@@ -138,7 +188,7 @@ public sealed class AutoDriveCar : MonoBehaviour
         Vector3 lookAhead =
             current.Position +
             current.Forward *
-            (currentForwardSpeed * deltaTime);
+            forwardDistance;
 
         if (!road.TryGetPathPoint(
                 lookAhead,
@@ -173,6 +223,10 @@ public sealed class AutoDriveCar : MonoBehaviour
             next.Position +
             next.Right * lateralOffset +
             next.Up * heightOffset;
+
+        // Count only forward road travel. Lateral weaving must not farm score
+        // or pickup spawn distance.
+        RoadDistanceTravelled += Vector3.Distance(current.Position, next.Position);
 
         ApplyRotation(
             next,

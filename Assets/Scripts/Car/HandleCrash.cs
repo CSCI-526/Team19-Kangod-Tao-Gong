@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 
 [DisallowMultipleComponent]
@@ -8,12 +9,14 @@ public sealed class HandleCrash : MonoBehaviour
     [Header("References")]
     [SerializeField] private ObstacleSpawner obstacles;
     [SerializeField] private ChaseMeter meter;
+    [SerializeField] private CarPickupEffects pickupEffects;
 
     [Header("Obstacle Collision")]
     [SerializeField, Range(0f, 1f)]
     private float crashDrainAmount = 0.5f;
 
     private bool restarting;
+    private readonly Dictionary<Transform, Vector3> contactedObstacles = new Dictionary<Transform, Vector3>();
 
     private void Awake()
     {
@@ -23,6 +26,16 @@ public sealed class HandleCrash : MonoBehaviour
 
         BoxCollider box = GetComponent<BoxCollider>();
         box.isTrigger = true;
+
+        if (pickupEffects == null)
+        {
+            pickupEffects = GetComponent<CarPickupEffects>();
+        }
+    }
+
+    private void OnDisable()
+    {
+        contactedObstacles.Clear();
     }
 
     private void Reset()
@@ -60,6 +73,12 @@ public sealed class HandleCrash : MonoBehaviour
 
         if (chaseCar != null)
         {
+            if (pickupEffects != null && pickupEffects.isActiveAndEnabled)
+            {
+                pickupEffects.TryCrash();
+                return;
+            }
+
             Crash();
             return;
         }
@@ -69,6 +88,25 @@ public sealed class HandleCrash : MonoBehaviour
                 obstacles.transform
             ))
         {
+            return;
+        }
+
+        if (pickupEffects != null && pickupEffects.isActiveAndEnabled)
+        {
+            Transform obstacle = other.transform;
+            while (obstacle.parent != null && obstacle.parent != obstacles.transform)
+            {
+                obstacle = obstacle.parent;
+            }
+
+            if (contactedObstacles.TryGetValue(obstacle, out Vector3 previousPlacement)
+                && (previousPlacement - obstacle.position).sqrMagnitude < 0.01f)
+            {
+                return;
+            }
+
+            contactedObstacles[obstacle] = obstacle.position;
+            pickupEffects.TryCrash();
             return;
         }
 
@@ -82,6 +120,15 @@ public sealed class HandleCrash : MonoBehaviour
     {
         if (restarting)
         {
+            return;
+        }
+
+        if (pickupEffects != null && pickupEffects.isActiveAndEnabled)
+        {
+            // With the recovery model enabled, impact is a temporary slowdown.
+            // Capture is represented by RiskRunState.IsGameOver and is restarted
+            // explicitly with R by RiskRunController.
+            pickupEffects.TryCrash();
             return;
         }
 

@@ -1,0 +1,1 @@
+PASS fuel=100 reverse=536 full=464; mcs compile exit=0; mono run exit=0

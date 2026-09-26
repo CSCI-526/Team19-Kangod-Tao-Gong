@@ -1,0 +1,100 @@
+using UnityEngine;
+
+[DisallowMultipleComponent]
+[DefaultExecutionOrder(-100)]
+public sealed class CarPickupEffects : MonoBehaviour
+{
+    private readonly RiskRunState runState = new RiskRunState();
+    private readonly FuelState fuelState = new FuelState();
+    private readonly RandomPickupOutcomeState randomOutcome = new RandomPickupOutcomeState();
+    private float baseForwardSpeed = 15f;
+    private float policeSpeed = 14f;
+    private bool simulationActive = true;
+    [SerializeField, Min(0f)] private float fuelConsumptionPerSecond = FuelState.DefaultConsumptionPerSecond;
+
+    public RiskRunState RunState => runState;
+    public FuelState FuelState => fuelState;
+    public bool SimulationActive => simulationActive;
+    public PickupEffectType ActiveEffect => runState.Effects.ActiveEffect;
+    public float RemainingSeconds => runState.Effects.RemainingSeconds;
+    public float SteeringMultiplier => runState.Effects.SteeringMultiplier;
+    public float ForwardSpeedMultiplier => runState.Effects.ForwardSpeedMultiplier * runState.CrashSpeedMultiplier;
+    public float LateralAccelerationMultiplier => runState.Effects.LateralAccelerationMultiplier;
+    public float CurrentFuel => fuelState.CurrentFuel;
+    public RandomPickupOutcome LastOutcome { get; private set; }
+
+    // The pursuit model needs the unmodified speeds; it applies the active effects itself.
+    public void ConfigurePursuit(float vehicleBaseSpeed, float pursuerSpeed)
+    {
+        baseForwardSpeed = vehicleBaseSpeed;
+        policeSpeed = pursuerSpeed;
+    }
+
+    public void SetSimulationActive(bool active)
+    {
+        simulationActive = active;
+    }
+
+    public void Apply(PickupEffectType effect, float duration = PickupEffectState.DefaultDurationSeconds)
+    {
+        TryApply(effect, duration);
+    }
+
+    public bool TryApply(PickupEffectType effect, float duration = PickupEffectState.DefaultDurationSeconds)
+    {
+        if (!isActiveAndEnabled) return false;
+
+        LastOutcome = RandomPickupOutcome.None;
+        switch (effect)
+        {
+            case PickupEffectType.RandomFuelOrReverse:
+                RandomPickupOutcome outcome = randomOutcome.Next();
+                if (outcome == RandomPickupOutcome.FullFuel)
+                {
+                    fuelState.RefillToFull();
+                    LastOutcome = outcome;
+                    return true;
+                }
+
+                LastOutcome = outcome;
+                return runState.TryCollectWithoutReward(PickupEffectType.ReverseSteering, duration);
+
+            case PickupEffectType.PartialFuel:
+                fuelState.Refill(50f);
+                LastOutcome = RandomPickupOutcome.FullFuel;
+                return true;
+
+            case PickupEffectType.FullFuel:
+                fuelState.RefillToFull();
+                LastOutcome = RandomPickupOutcome.FullFuel;
+                return true;
+
+            default:
+                return runState.TryCollectWithoutReward(effect, duration);
+        }
+    }
+
+    public bool TryCrash()
+    {
+        return isActiveAndEnabled && runState.TryCrash();
+    }
+
+    public void Clear()
+    {
+        runState.TryBailOut();
+    }
+
+    private void Update()
+    {
+        if (!simulationActive) return;
+        runState.Tick(Time.deltaTime, baseForwardSpeed, policeSpeed);
+        fuelState.Tick(Time.deltaTime, fuelConsumptionPerSecond);
+    }
+
+    private void OnDisable()
+    {
+        runState.Reset();
+        fuelState.Reset();
+        LastOutcome = RandomPickupOutcome.None;
+    }
+}

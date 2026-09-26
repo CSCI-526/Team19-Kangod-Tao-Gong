@@ -1,0 +1,67 @@
+using NUnit.Framework;
+
+public sealed class FuelAndRandomPickupTests
+{
+    [Test]
+    public void FuelState_ConsumesAndClampsAtZero()
+    {
+        var fuel = new FuelState();
+
+        fuel.Tick(5f, 4f);
+        Assert.That(fuel.CurrentFuel, Is.EqualTo(80f));
+
+        fuel.Tick(30f, 4f);
+        Assert.That(fuel.CurrentFuel, Is.Zero);
+    }
+
+    [Test]
+    public void FuelState_RefillNeverExceedsMaximumAndFullRefillRestoresMaximum()
+    {
+        var fuel = new FuelState();
+        fuel.Tick(10f, 4f);
+
+        fuel.Refill(50f);
+        Assert.That(fuel.CurrentFuel, Is.EqualTo(90f));
+
+        fuel.RefillToFull();
+        Assert.That(fuel.CurrentFuel, Is.EqualTo(FuelState.MaximumFuel));
+    }
+
+    [Test]
+    public void RandomPickupOutcomeState_ProducesBothOutcomesWithASeed()
+    {
+        var outcomes = new RandomPickupOutcomeState(12345);
+        int reverse = 0;
+        int fullFuel = 0;
+
+        for (int i = 0; i < 1000; i++)
+        {
+            switch (outcomes.Next())
+            {
+                case RandomPickupOutcome.ReverseSteering:
+                    reverse++;
+                    break;
+                case RandomPickupOutcome.FullFuel:
+                    fullFuel++;
+                    break;
+                default:
+                    Assert.Fail("A random special pickup must always have an outcome.");
+                    break;
+            }
+        }
+
+        Assert.That(reverse, Is.GreaterThan(0));
+        Assert.That(fullFuel, Is.GreaterThan(0));
+        Assert.That(reverse + fullFuel, Is.EqualTo(1000));
+    }
+
+    [Test]
+    public void RandomPickupOutcomeState_IsDeterministicWhenSeeded()
+    {
+        var first = new RandomPickupOutcomeState(7);
+        var second = new RandomPickupOutcomeState(7);
+
+        for (int i = 0; i < 50; i++)
+            Assert.That(first.Next(), Is.EqualTo(second.Next()));
+    }
+}
