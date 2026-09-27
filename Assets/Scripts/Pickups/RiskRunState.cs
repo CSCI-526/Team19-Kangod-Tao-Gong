@@ -15,6 +15,8 @@ public sealed class RiskRunState
     private double crashSlowRemaining;
     private double collisionProtectionRemaining;
     private double recoveryWaitRemaining;
+    private bool shieldAvailable;
+    private int shieldUseCount;
 
     // This run is the sole clock owner; callers read Effects but advance it through Tick.
     public PickupEffectState Effects { get; } = new PickupEffectState();
@@ -23,6 +25,8 @@ public sealed class RiskRunState
     public float CrashSlowRemaining => (float)crashSlowRemaining;
     public float CollisionProtectionRemaining => (float)collisionProtectionRemaining;
     public float RecoveryWaitRemaining => (float)recoveryWaitRemaining;
+    public bool HasShield => shieldAvailable;
+    public int ShieldUseCount => shieldUseCount;
     public int BankedPickupScore { get; private set; }
     public int PendingBonus { get; private set; }
     public float LastTickForwardDistance { get; private set; }
@@ -71,6 +75,25 @@ public sealed class RiskRunState
 
         Effects.Clear();
         PendingBonus = 0;
+        return true;
+    }
+
+    /// <summary>Stores one collision shield earned from a pickup.</summary>
+    public bool TryGrantShield()
+    {
+        if (IsGameOver) return false;
+        shieldAvailable = true;
+        return true;
+    }
+
+    /// <summary>Consumes the shield only when a new collision would actually start recovery.</summary>
+    public bool TryConsumeShield()
+    {
+        if (IsGameOver || !shieldAvailable || collisionProtectionRemaining > 0d)
+            return false;
+
+        shieldAvailable = false;
+        shieldUseCount++;
         return true;
     }
 
@@ -156,6 +179,8 @@ public sealed class RiskRunState
         crashSlowRemaining = 0d;
         collisionProtectionRemaining = 0d;
         recoveryWaitRemaining = 0d;
+        shieldAvailable = false;
+        shieldUseCount = 0;
         BankedPickupScore = 0;
         PendingBonus = 0;
         LastTickForwardDistance = 0f;

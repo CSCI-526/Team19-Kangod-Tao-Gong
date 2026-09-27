@@ -43,6 +43,33 @@ public sealed class RiskRunStateTests
     }
 
     [Test]
+    public void Shield_BlocksOneNewCollisionWithoutStartingRecovery()
+    {
+        var run = new RiskRunState();
+        Assert.That(run.TryGrantShield(), Is.True);
+        Assert.That(run.HasShield, Is.True);
+        Assert.That(run.TryConsumeShield(), Is.True);
+        Assert.That(run.HasShield, Is.False);
+        Assert.That(run.ShieldUseCount, Is.EqualTo(1));
+        Assert.That(run.CrashSlowRemaining, Is.Zero);
+        Assert.That(run.RecoveryWaitRemaining, Is.Zero);
+        Assert.That(run.TryConsumeShield(), Is.False);
+    }
+
+    [Test]
+    public void Shield_IsPreservedDuringExistingCollisionProtection()
+    {
+        var run = new RiskRunState();
+        Assert.That(run.TryCrash(), Is.True);
+        Assert.That(run.TryGrantShield(), Is.True);
+        Assert.That(run.TryConsumeShield(), Is.False);
+        Assert.That(run.HasShield, Is.True);
+        run.Tick(RiskRunState.CollisionProtectionDuration);
+        Assert.That(run.TryConsumeShield(), Is.True);
+        Assert.That(run.HasShield, Is.False);
+    }
+
+    [Test]
     public void RecoveryWait_IsMeasuredFromImpactAndOnlyBlocksPositiveDistance()
     {
         var run = new RiskRunState();
@@ -341,6 +368,8 @@ public sealed class RiskRunStateTests
         Assert.That(run.CrashSlowRemaining, Is.Zero);
         Assert.That(run.CollisionProtectionRemaining, Is.Zero);
         Assert.That(run.RecoveryWaitRemaining, Is.Zero);
+        Assert.That(run.HasShield, Is.False);
+        Assert.That(run.ShieldUseCount, Is.Zero);
         Assert.That(run.CrashSpeedMultiplier, Is.EqualTo(1f));
         Assert.That(run.BankedPickupScore, Is.Zero);
         Assert.That(run.PendingBonus, Is.Zero);

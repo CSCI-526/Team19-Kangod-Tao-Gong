@@ -76,8 +76,8 @@ public sealed class PickupSpawner : MonoBehaviour
             if (BlockedByObstacle(position)) continue;
 
             PickupItem item = Instantiate(pickupPrefab, position, Quaternion.identity, transform);
-            // The first team-reporting slice tests one special pickup with a
-            // hidden 50/50 outcome: full fuel or reversed steering.
+            // The special pickup hides a 50/25/25 outcome: reverse steering,
+            // full fuel, or a one-hit shield.
             item.Configure(PickupEffectType.RandomFuelOrReverse, effectDuration);
             active.Add(item);
             spawnCount++;

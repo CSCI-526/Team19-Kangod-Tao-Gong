@@ -21,6 +21,8 @@ public sealed class CarPickupEffects : MonoBehaviour
     public float ForwardSpeedMultiplier => runState.Effects.ForwardSpeedMultiplier * runState.CrashSpeedMultiplier;
     public float LateralAccelerationMultiplier => runState.Effects.LateralAccelerationMultiplier;
     public float CurrentFuel => fuelState.CurrentFuel;
+    public bool ShieldReady => runState.HasShield;
+    public int ShieldUseCount => runState.ShieldUseCount;
     public RandomPickupOutcome LastOutcome { get; private set; }
     public int PickupCount { get; private set; }
 
@@ -58,6 +60,17 @@ public sealed class CarPickupEffects : MonoBehaviour
                     return true;
                 }
 
+                if (outcome == RandomPickupOutcome.Shield)
+                {
+                    bool shielded = runState.TryGrantShield();
+                    if (shielded)
+                    {
+                        LastOutcome = outcome;
+                        PickupCount++;
+                    }
+                    return shielded;
+                }
+
                 LastOutcome = outcome;
                 bool reversed = runState.TryCollectWithoutReward(PickupEffectType.ReverseSteering, duration);
                 if (reversed)
@@ -76,6 +89,15 @@ public sealed class CarPickupEffects : MonoBehaviour
                 PickupCount++;
                 return true;
 
+            case PickupEffectType.Shield:
+                bool shieldedPickup = runState.TryGrantShield();
+                if (shieldedPickup)
+                {
+                    LastOutcome = RandomPickupOutcome.Shield;
+                    PickupCount++;
+                }
+                return shieldedPickup;
+
             default:
                 bool applied = runState.TryCollectWithoutReward(effect, duration);
                 if (applied)
@@ -87,6 +109,11 @@ public sealed class CarPickupEffects : MonoBehaviour
     public bool TryCrash()
     {
         return isActiveAndEnabled && runState.TryCrash();
+    }
+
+    public bool TryConsumeShield()
+    {
+        return isActiveAndEnabled && runState.TryConsumeShield();
     }
 
     public void Clear()

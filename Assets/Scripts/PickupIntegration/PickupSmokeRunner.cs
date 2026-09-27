@@ -181,6 +181,24 @@ public sealed class PickupSmokeRunner : MonoBehaviour
             "Replacing an effect discards its old pending reward; only the new reward matures");
         effects.Clear();
 
+        SpawnPickup(car.transform, PickupEffectType.Shield, 5f);
+        deadline = Time.realtimeSinceStartup + 3f;
+        while (!effects.ShieldReady && Time.realtimeSinceStartup < deadline)
+            yield return null;
+        Require(effects.ShieldReady, "Real trigger pickup arms a one-hit shield");
+        int shieldUsesBefore = effects.ShieldUseCount;
+        float gapBeforeShieldedCrash = effects.RunState.PursuitGap;
+        GameObject shieldWall = SpawnObstacle(car.transform, obstacles.transform);
+        deadline = Time.realtimeSinceStartup + 4f;
+        while (effects.ShieldUseCount == shieldUsesBefore && Time.realtimeSinceStartup < deadline)
+            yield return null;
+        Require(effects.ShieldUseCount == shieldUsesBefore + 1,
+            "Shield blocks the next real obstacle collision");
+        Require(!effects.ShieldReady && effects.RunState.CrashSlowRemaining <= 0f
+            && Mathf.Abs(effects.RunState.PursuitGap - gapBeforeShieldedCrash) < 0.5f,
+            "Shield collision does not start slowdown or close the police gap");
+        shieldWall.SetActive(false);
+
         float gapBeforeCrash = effects.RunState.PursuitGap;
         GameObject wall = SpawnObstacle(car.transform, obstacles.transform);
         deadline = Time.realtimeSinceStartup + 4f;
@@ -241,6 +259,7 @@ public sealed class PickupSmokeRunner : MonoBehaviour
         yield return null;
         CarPickupEffects restarted = FindFirstObjectByType<CarPickupEffects>();
         Require(restarted != null && restarted.ActiveEffect == PickupEffectType.None
+            && !restarted.ShieldReady && restarted.ShieldUseCount == 0
             && restarted.RunState.PendingBonus == 0 && restarted.RunState.BankedPickupScore == 0
             && restarted.RunState.CrashSlowRemaining == 0f
             && restarted.RunState.CollisionProtectionRemaining == 0f

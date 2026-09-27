@@ -13,6 +13,7 @@ public sealed class PickupHUD : MonoBehaviour
     private string popupHint;
     private float popupRemaining;
     private int shownPickupCount;
+    private int shownShieldUseCount;
 
     private void Update()
     {
@@ -23,9 +24,27 @@ public sealed class PickupHUD : MonoBehaviour
             shownPickupCount = effects.PickupCount;
             bool reverse = effects.ActiveEffect == PickupEffectType.ReverseSteering;
             bool fullFuel = effects.LastOutcome == RandomPickupOutcome.FullFuel;
-            popupMessage = fullFuel ? "FUEL FULL!" : reverse ? "CONTROLS REVERSED!" : null;
-            popupHint = fullFuel ? "Fuel restored to 100%" : "A / Left: move right     D / Right: move left";
+            bool shield = effects.LastOutcome == RandomPickupOutcome.Shield;
+            popupMessage = fullFuel ? "FUEL FULL!"
+                : shield ? "SHIELD READY!"
+                : reverse ? "CONTROLS REVERSED!"
+                : null;
+            popupHint = fullFuel ? "Fuel restored to 100%"
+                : shield ? "Next hit is blocked"
+                : reverse ? "A / Left: move right     D / Right: move left"
+                : null;
             popupRemaining = popupMessage != null && !effects.RunState.IsGameOver ? PopupDuration : 0f;
+        }
+
+        if (effects.ShieldUseCount != shownShieldUseCount)
+        {
+            shownShieldUseCount = effects.ShieldUseCount;
+            if (!effects.RunState.IsGameOver)
+            {
+                popupMessage = "HIT BLOCKED!";
+                popupHint = "Shield used";
+                popupRemaining = PopupDuration;
+            }
         }
 
         if (popupRemaining > 0f)
@@ -36,6 +55,7 @@ public sealed class PickupHUD : MonoBehaviour
     {
         popupRemaining = 0f;
         shownPickupCount = 0;
+        shownShieldUseCount = 0;
     }
 
     private static void DrawPanel(Rect rect)
@@ -69,8 +89,8 @@ public sealed class PickupHUD : MonoBehaviour
         GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f));
         float width = Screen.width / scale;
         float height = Screen.height / scale;
-        Rect textArea = new Rect(32f, 32f, 340f, 150f);
-        DrawPanel(new Rect(20f, 20f, 364f, 166f));
+        Rect textArea = new Rect(32f, 32f, 340f, 184f);
+        DrawPanel(new Rect(20f, 20f, 364f, 200f));
         RiskRunState run = effects.RunState;
 
         string title = effects.ActiveEffect == PickupEffectType.ReverseSteering
@@ -89,12 +109,16 @@ public sealed class PickupHUD : MonoBehaviour
         GUI.Label(new Rect(textArea.x, textArea.y + 54f, textArea.width, 28f), pursuit, body);
 
         GUI.Label(new Rect(textArea.x, textArea.y + 84f, textArea.width, 30f), title, body);
+        GUI.Label(new Rect(textArea.x, textArea.y + 113f, textArea.width, 30f),
+            effects.ShieldReady ? "Shield: READY" : "Shield: none", body);
         string outcome = effects.LastOutcome == RandomPickupOutcome.FullFuel
             ? "Last pickup: full fuel"
             : effects.LastOutcome == RandomPickupOutcome.ReverseSteering
                 ? "Last pickup: reverse"
+                : effects.LastOutcome == RandomPickupOutcome.Shield
+                    ? "Last pickup: shield"
                 : "Pickup: mystery";
-        GUI.Label(new Rect(textArea.x, textArea.y + 113f, textArea.width, 36f), outcome, body);
+        GUI.Label(new Rect(textArea.x, textArea.y + 143f, textArea.width, 36f), outcome, body);
 
         if (showControls)
         {
@@ -102,7 +126,7 @@ public sealed class PickupHUD : MonoBehaviour
             GUI.Label(new Rect(32f, height - 84f, width - 64f, 32f),
                 "A/D or Left/Right: steer. Avoid obstacles.", body);
             GUI.Label(new Rect(32f, height - 49f, width - 64f, 36f),
-                "Pickup: 50% FUEL FULL or 50% REVERSE for 5s.", body);
+                "Pickup: 50% REVERSE, 25% FUEL FULL, 25% SHIELD.", body);
         }
 
         if (popupRemaining > 0f || run.IsGameOver)

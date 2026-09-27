@@ -1,6 +1,6 @@
 # Team contribution record
 
-Updated: 2026-09-26
+Updated: 2026-09-27
 
 ## Version boundary
 
@@ -18,7 +18,8 @@ The team version supplies the endless road, automatic forward driving, steering 
 ### New gameplay systems
 
 - Added `MysteryPickup` and `PickupSpawner`.
-- Added a hidden 50/50 pickup outcome: full fuel or reversed steering for five seconds.
+- Added a hidden 50/25/25 pickup outcome: reversed steering for five seconds, full fuel, or a one-hit shield.
+- Added a one-hit shield that blocks the next collision that would start crash recovery, then clears itself.
 - Added the local `FuelState` model and fuel drain display.
 - Added `RiskRunState` and `RiskRunController` so a crash slows the car, pursuit distance recovers after clean driving, capture stops the run, and **R** restarts it.
 - Kept the team `ScoreMeter` unchanged; pickups do not add score in this slice.
@@ -36,6 +37,8 @@ The team version supplies the endless road, automatic forward driving, steering 
 - Added a two-second center popup after each pickup:
   - `FUEL FULL!` / `Fuel restored to 100%`
   - `CONTROLS REVERSED!` / `A / Left: move right     D / Right: move left`
+  - `SHIELD READY!` / `Next hit is blocked`
+  - `HIT BLOCKED!` / `Shield used`
 - Added `PickupCount` so repeated pickups with the same result can still trigger a new popup.
 
 ## Current player-facing prompts
@@ -49,17 +52,19 @@ The team version supplies the endless road, automatic forward driving, steering 
 - `REVERSED 5.0s`
 - `Last pickup: full fuel`
 - `Last pickup: reverse`
+- `Last pickup: shield`
+- `Shield: READY` / `Shield: none`
 - `Pickup: mystery`
 - `A/D or Left/Right: steer. Avoid obstacles.`
-- `Pickup: 50% FUEL FULL or 50% REVERSE for 5s.`
+- `Pickup: 50% REVERSE, 25% FUEL FULL, 25% SHIELD.`
 - Capture popup: `CAUGHT!` / `Press R to restart`
 
 ## Verification boundary
 
-- Unity `6000.3.23f1` compiled the changed scripts and entered Play Mode.
-- Live smoke check confirmed the readable HUD panel and center capture popup.
-- The pickup spawn and crash slowdown were previously confirmed in the same team snapshot.
-- Direct collection of both random pickup outcomes and WebGL build remain open; player balance and readability still need team playtest feedback.
+- Unity `6000.3.23f1` recompiled the changed runtime and test assemblies without a new C# error from this slice.
+- Earlier team-snapshot smoke checks confirmed the readable HUD panel, center capture popup, pickup spawn, and crash slowdown.
+- A direct source-level check confirmed all three random outcomes, one-use shield behavior, preservation during existing collision protection, and ordinary-crash fallback (`reverse=527`, `fullFuel=226`, `shield=247` from 1000 seeded draws).
+- Full EditMode/live shield collision verification and WebGL build remain open because the current Unity license check exits with code 198; player balance and readability still need team playtest feedback.
 
 ## Files owned by our slice
 

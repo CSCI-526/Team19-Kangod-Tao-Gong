@@ -75,6 +75,11 @@ public sealed class HandleCrash : MonoBehaviour
         {
             if (pickupEffects != null && pickupEffects.isActiveAndEnabled)
             {
+                if (pickupEffects.TryConsumeShield())
+                {
+                    return;
+                }
+
                 pickupEffects.TryCrash();
                 return;
             }
@@ -106,6 +111,11 @@ public sealed class HandleCrash : MonoBehaviour
             }
 
             contactedObstacles[obstacle] = obstacle.position;
+            if (pickupEffects.TryConsumeShield())
+            {
+                return;
+            }
+
             pickupEffects.TryCrash();
             return;
         }
@@ -125,6 +135,11 @@ public sealed class HandleCrash : MonoBehaviour
 
         if (pickupEffects != null && pickupEffects.isActiveAndEnabled)
         {
+            if (pickupEffects.TryConsumeShield())
+            {
+                return;
+            }
+
             // With the recovery model enabled, impact is a temporary slowdown.
             // Capture is represented by RiskRunState.IsGameOver and is restarted
             // explicitly with R by RiskRunController.

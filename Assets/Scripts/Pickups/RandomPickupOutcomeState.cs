@@ -4,10 +4,11 @@ public enum RandomPickupOutcome
 {
     None = 0,
     ReverseSteering = 1,
-    FullFuel = 2
+    FullFuel = 2,
+    Shield = 3
 }
 
-/// <summary>Deterministic 50/50 outcome source; a seed makes editor tests reproducible.</summary>
+/// <summary>Deterministic 50/25/25 outcome source; a seed makes editor tests reproducible.</summary>
 public sealed class RandomPickupOutcomeState
 {
     private readonly Random random;
@@ -19,8 +20,8 @@ public sealed class RandomPickupOutcomeState
 
     public RandomPickupOutcome Next()
     {
-        return random.Next(2) == 0
-            ? RandomPickupOutcome.ReverseSteering
-            : RandomPickupOutcome.FullFuel;
+        int roll = random.Next(4);
+        if (roll < 2) return RandomPickupOutcome.ReverseSteering;
+        return roll == 2 ? RandomPickupOutcome.FullFuel : RandomPickupOutcome.Shield;
     }
 }

@@ -33,6 +33,7 @@ public sealed class FuelAndRandomPickupTests
         var outcomes = new RandomPickupOutcomeState(12345);
         int reverse = 0;
         int fullFuel = 0;
+        int shield = 0;
 
         for (int i = 0; i < 1000; i++)
         {
@@ -44,15 +45,19 @@ public sealed class FuelAndRandomPickupTests
                 case RandomPickupOutcome.FullFuel:
                     fullFuel++;
                     break;
+                case RandomPickupOutcome.Shield:
+                    shield++;
+                    break;
                 default:
-                    Assert.Fail("A random special pickup must always have an outcome.");
+                    Assert.Fail("A random special pickup must always have a valid outcome.");
                     break;
             }
         }
 
         Assert.That(reverse, Is.GreaterThan(0));
         Assert.That(fullFuel, Is.GreaterThan(0));
-        Assert.That(reverse + fullFuel, Is.EqualTo(1000));
+        Assert.That(shield, Is.GreaterThan(0));
+        Assert.That(reverse + fullFuel + shield, Is.EqualTo(1000));
     }
 
     [Test]
