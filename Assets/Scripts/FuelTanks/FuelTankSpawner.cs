@@ -13,7 +13,7 @@ public class FuelTankSpawner : MonoBehaviour
     [Header("Fuel Tank")]
     [SerializeField] private GameObject fuelTankPrefab;
     [SerializeField, Min(0f)] private float lifetime = 10f;
-    [SerializeField, Min(0f)] private float fuelAmount = 50f;
+
 
     [SerializeField] private float heightOffset = 0.8f;
     private Vector3 previousCarPosition;

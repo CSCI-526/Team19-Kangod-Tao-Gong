@@ -497,6 +497,8 @@ MonoBehaviour:
   car: {fileID: 1633598803}
   spawnDistance: 50
   fuelTankPrefab: {fileID: 4882813726840004750, guid: 09dcac4f01cdc45b9946155c79139d1b, type: 3}
+  lifetime: 10
+  fuelAmount: 50
   heightOffset: 0.8
 --- !u!4 &419294686
 Transform:
