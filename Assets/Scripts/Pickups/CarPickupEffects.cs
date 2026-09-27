@@ -52,12 +52,15 @@ public sealed class CarPickupEffects : MonoBehaviour
         {
             case PickupEffectType.RandomFuelOrReverse:
                 RandomPickupOutcome outcome = randomOutcome.Next();
-                if (outcome == RandomPickupOutcome.FullFuel)
+                if (outcome == RandomPickupOutcome.ProximityRecovery)
                 {
-                    fuelState.RefillToFull();
-                    LastOutcome = outcome;
-                    PickupCount++;
-                    return true;
+                    bool restored = runState.TryRestorePursuitGap(RiskRunState.PickupProximityRecovery);
+                    if (restored)
+                    {
+                        LastOutcome = outcome;
+                        PickupCount++;
+                    }
+                    return restored;
                 }
 
                 if (outcome == RandomPickupOutcome.Shield)

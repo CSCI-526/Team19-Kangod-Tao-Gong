@@ -32,7 +32,7 @@ public sealed class FuelAndRandomPickupTests
     {
         var outcomes = new RandomPickupOutcomeState(12345);
         int reverse = 0;
-        int fullFuel = 0;
+        int proximity = 0;
         int shield = 0;
 
         for (int i = 0; i < 1000; i++)
@@ -42,8 +42,8 @@ public sealed class FuelAndRandomPickupTests
                 case RandomPickupOutcome.ReverseSteering:
                     reverse++;
                     break;
-                case RandomPickupOutcome.FullFuel:
-                    fullFuel++;
+                case RandomPickupOutcome.ProximityRecovery:
+                    proximity++;
                     break;
                 case RandomPickupOutcome.Shield:
                     shield++;
@@ -55,9 +55,9 @@ public sealed class FuelAndRandomPickupTests
         }
 
         Assert.That(reverse, Is.GreaterThan(0));
-        Assert.That(fullFuel, Is.GreaterThan(0));
+        Assert.That(proximity, Is.GreaterThan(0));
         Assert.That(shield, Is.GreaterThan(0));
-        Assert.That(reverse + fullFuel + shield, Is.EqualTo(1000));
+        Assert.That(reverse + proximity + shield, Is.EqualTo(1000));
     }
 
     [Test]

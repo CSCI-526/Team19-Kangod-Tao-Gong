@@ -70,6 +70,21 @@ public sealed class RiskRunStateTests
     }
 
     [Test]
+    public void ProximityRecovery_AddsHalfCapacityAndClampsAtMaximum()
+    {
+        var fullRun = new RiskRunState();
+        Assert.That(fullRun.TryRestorePursuitGap(RiskRunState.PickupProximityRecovery), Is.True);
+        Assert.That(fullRun.PursuitGap, Is.EqualTo(RiskRunState.MaximumPursuitGap));
+
+        var run = new RiskRunState();
+        run.TryCrash();
+        run.Tick(RiskRunState.CrashSlowDuration);
+        Assert.That(run.PursuitGap, Is.EqualTo(31f).Within(0.0001f));
+        Assert.That(run.TryRestorePursuitGap(RiskRunState.PickupProximityRecovery), Is.True);
+        Assert.That(run.PursuitGap, Is.EqualTo(68.5f).Within(0.0001f));
+    }
+
+    [Test]
     public void RecoveryWait_IsMeasuredFromImpactAndOnlyBlocksPositiveDistance()
     {
         var run = new RiskRunState();

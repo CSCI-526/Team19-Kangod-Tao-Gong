@@ -1,12 +1,12 @@
 # Risk and recovery prototype
 
-## Current reporting slice (2026-09-26)
+## Current reporting slice (2026-09-27)
 
 The current local slice deliberately leaves pickup score out of the gameplay path. It adds one special pickup whose result is hidden until collection and then chosen with a 50/25/25 split:
 
 | Result | Behavior |
 | --- | --- |
-| Full fuel | Sets the local fuel model to 100%. It does not add score or start a temporary effect. |
+| Proximity recovery | Adds half of the maximum police-gap capacity, capped at the maximum. It does not add score or start a temporary effect. |
 | Reversed controls | Reverses steering for 5 seconds. Fuel is unchanged and no score is added. |
 | One-hit shield | Blocks the next collision that would start crash recovery. It is consumed once and cannot be stacked. |
 
@@ -51,14 +51,14 @@ The integration is now present in `Assets/Scenes/GetawayChase.unity` on the loca
 1. `CarPickupEffects` and `RiskRunController` are on the player car beside `AutoDriveCar`.
 2. `HandleCrash` and `ChaseMeter` route impacts through the recovery model, so a collision slows the run and capture requires an explicit **R** restart.
 3. A separate `PickupSystem` root owns `PickupSpawner` and `PickupHUD`. It references the existing road, player, obstacle spawner, and `MysteryPickup` prefab; pickups remain outside the obstacle-spawner hierarchy.
-4. `PickupSpawner` configures the special pickup as a 50% reversed-controls, 25% full-fuel, or 25% one-hit-shield result. The team `ScoreMeter` remains unchanged, so this slice adds no pickup score.
+4. `PickupSpawner` configures the special pickup as a 50% reversed-controls, 25% proximity-recovery, or 25% one-hit-shield result. The team `ScoreMeter` remains unchanged, so this slice adds no pickup score.
 5. Spacing and effect duration still need player feedback before the team decides whether to merge the tuning.
 
 `AutoDriveCar` remains the only script that moves the vehicle. `RiskRunState` supplies one integrated forward distance per frame so pursuit and actual movement agree across effect expiry and capture. Without an enabled `CarPickupEffects` component, the original scene keeps its original driving, collision restart and distance-score behavior. Road and obstacle-generation scripts are not changed.
 
 ## Validation commands
 
-The source-level check for the current slice passed: `FuelState` consumed and clamped fuel correctly, full refill restored 100%, and a seeded 1,000-draw sample produced all three random outcomes. Unit coverage also checks that a shield blocks one new collision, is preserved during the built-in collision protection window, and resets with the run. This does not verify Unity scene wiring or actual input/collider behavior.
+The source-level check for the current slice passed: `FuelState` consumed and clamped fuel correctly, a seeded 1,000-draw sample produced all three random outcomes, and proximity recovery adds half the maximum gap while clamping at the maximum. Unit coverage also checks that a shield blocks one new collision, is preserved during the built-in collision protection window, and resets with the run. This does not verify Unity scene wiring or actual input/collider behavior.
 
 The risk/recovery version passed **62 state/lifecycle tests and 38 real input/physics checks**, using **6000.3.22f1 in a separate temporary copy**. Checks include cancellation, payout, collision slowdown, distance recovery, capture, stopped movement/score, and R restart. All 23 C# source files matched the tested copy by SHA-256. Those automated checks are historical; the current **6000.3.23f1** main-scene smoke result is recorded above, while a full automated rerun on the team snapshot remains pending. These checks establish behavior, not player enjoyment or balanced tuning.
 

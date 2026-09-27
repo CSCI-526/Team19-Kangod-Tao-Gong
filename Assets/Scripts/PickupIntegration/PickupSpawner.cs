@@ -77,7 +77,7 @@ public sealed class PickupSpawner : MonoBehaviour
 
             PickupItem item = Instantiate(pickupPrefab, position, Quaternion.identity, transform);
             // The special pickup hides a 50/25/25 outcome: reverse steering,
-            // full fuel, or a one-hit shield.
+            // proximity recovery, or a one-hit shield.
             item.Configure(PickupEffectType.RandomFuelOrReverse, effectDuration);
             active.Add(item);
             spawnCount++;

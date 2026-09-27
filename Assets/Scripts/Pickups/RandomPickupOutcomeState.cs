@@ -4,7 +4,7 @@ public enum RandomPickupOutcome
 {
     None = 0,
     ReverseSteering = 1,
-    FullFuel = 2,
+    ProximityRecovery = 2,
     Shield = 3
 }
 
@@ -22,6 +22,6 @@ public sealed class RandomPickupOutcomeState
     {
         int roll = random.Next(4);
         if (roll < 2) return RandomPickupOutcome.ReverseSteering;
-        return roll == 2 ? RandomPickupOutcome.FullFuel : RandomPickupOutcome.Shield;
+        return roll == 2 ? RandomPickupOutcome.ProximityRecovery : RandomPickupOutcome.Shield;
     }
 }

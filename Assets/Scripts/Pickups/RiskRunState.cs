@@ -5,6 +5,7 @@ public sealed class RiskRunState
 {
     public const float InitialPursuitGap = 45f;
     public const float MaximumPursuitGap = 75f;
+    public const float PickupProximityRecovery = MaximumPursuitGap * 0.5f;
     public const float CrashSlowDuration = 1.6f;
     public const float CollisionProtectionDuration = 1f;
     public const float RecoveryWaitDuration = 2.6f;
@@ -83,6 +84,16 @@ public sealed class RiskRunState
     {
         if (IsGameOver) return false;
         shieldAvailable = true;
+        return true;
+    }
+
+    /// <summary>Adds one half of the maximum pursuit gap, capped at the maximum.</summary>
+    public bool TryRestorePursuitGap(float amount)
+    {
+        if (IsGameOver || !IsFinite(amount) || amount <= 0f)
+            return false;
+
+        pursuitGap = Math.Min(MaximumPursuitGap, pursuitGap + amount);
         return true;
     }
 

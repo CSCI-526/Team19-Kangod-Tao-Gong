@@ -23,13 +23,13 @@ public sealed class PickupHUD : MonoBehaviour
         {
             shownPickupCount = effects.PickupCount;
             bool reverse = effects.ActiveEffect == PickupEffectType.ReverseSteering;
-            bool fullFuel = effects.LastOutcome == RandomPickupOutcome.FullFuel;
+            bool proximity = effects.LastOutcome == RandomPickupOutcome.ProximityRecovery;
             bool shield = effects.LastOutcome == RandomPickupOutcome.Shield;
-            popupMessage = fullFuel ? "FUEL FULL!"
+            popupMessage = proximity ? "GAP RESTORED!"
                 : shield ? "SHIELD READY!"
                 : reverse ? "CONTROLS REVERSED!"
                 : null;
-            popupHint = fullFuel ? "Fuel restored to 100%"
+            popupHint = proximity ? "Police gap increased"
                 : shield ? "Next hit is blocked"
                 : reverse ? "A / Left: move right     D / Right: move left"
                 : null;
@@ -111,8 +111,8 @@ public sealed class PickupHUD : MonoBehaviour
         GUI.Label(new Rect(textArea.x, textArea.y + 84f, textArea.width, 30f), title, body);
         GUI.Label(new Rect(textArea.x, textArea.y + 113f, textArea.width, 30f),
             effects.ShieldReady ? "Shield: READY" : "Shield: none", body);
-        string outcome = effects.LastOutcome == RandomPickupOutcome.FullFuel
-            ? "Last pickup: full fuel"
+        string outcome = effects.LastOutcome == RandomPickupOutcome.ProximityRecovery
+            ? "Last pickup: gap +50%"
             : effects.LastOutcome == RandomPickupOutcome.ReverseSteering
                 ? "Last pickup: reverse"
                 : effects.LastOutcome == RandomPickupOutcome.Shield
@@ -126,7 +126,7 @@ public sealed class PickupHUD : MonoBehaviour
             GUI.Label(new Rect(32f, height - 84f, width - 64f, 32f),
                 "A/D or Left/Right: steer. Avoid obstacles.", body);
             GUI.Label(new Rect(32f, height - 49f, width - 64f, 36f),
-                "Pickup: 50% REVERSE, 25% FUEL FULL, 25% SHIELD.", body);
+                "Pickup: 50% REVERSE, 25% GAP +50%, 25% SHIELD.", body);
         }
 
         if (popupRemaining > 0f || run.IsGameOver)
