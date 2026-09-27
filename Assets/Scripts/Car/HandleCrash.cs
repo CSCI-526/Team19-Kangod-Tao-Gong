@@ -5,32 +5,89 @@ using UnityEngine.SceneManagement;
 [RequireComponent(typeof(Rigidbody), typeof(BoxCollider))]
 public sealed class HandleCrash : MonoBehaviour
 {
+    [Header("References")]
     [SerializeField] private ObstacleSpawner obstacles;
+    [SerializeField] private ChaseMeter meter;
 
+    [Header("Obstacle Collision")]
+    [SerializeField, Range(0f, 1f)]
+    private float crashDrainAmount = 0.5f;
 
     private bool restarting;
-    private FuelMeter meter;
+    private FuelMeter fuelMeter;
 
     private void Awake()
     {
-        meter = GetComponent<FuelMeter>();
+        fuelMeter = GetComponent<FuelMeter>();
+
+        Rigidbody body = GetComponent<Rigidbody>();
+        body.isKinematic = true;
+        body.useGravity = false;
+
+        BoxCollider box = GetComponent<BoxCollider>();
+        box.isTrigger = true;
     }
+
     private void Reset()
     {
         Rigidbody body = GetComponent<Rigidbody>();
         body.isKinematic = true;
         body.useGravity = false;
 
-        Renderer visual = GetComponentInChildren<Renderer>();
+        BoxCollider box = GetComponent<BoxCollider>();
+        box.isTrigger = true;
+
+        Renderer visual =
+            GetComponentInChildren<Renderer>();
 
         if (visual != null)
         {
-            BoxCollider box = GetComponent<BoxCollider>();
-            box.center = transform.InverseTransformPoint(visual.bounds.center);
+            box.center =
+                transform.InverseTransformPoint(
+                    visual.bounds.center
+                );
+
             box.size = visual.bounds.size;
         }
+    }
 
-        GetComponent<BoxCollider>().isTrigger = true;
+    private void OnTriggerEnter(Collider other)
+    {
+        if (restarting)
+        {
+            return;
+        }
+
+        FuelTank tank = other.GetComponent<FuelTank>();
+
+        if (tank != null)
+        {
+            fuelMeter.ChangeFuel(tank.FuelAmount);
+            Destroy(other.gameObject);
+            return;
+        }
+
+        ChaseCar chaseCar =
+            other.GetComponentInParent<ChaseCar>();
+
+        if (chaseCar != null)
+        {
+            Crash();
+            return;
+        }
+
+        if (obstacles == null ||
+            !other.transform.IsChildOf(
+                obstacles.transform
+            ))
+        {
+            return;
+        }
+
+        if (meter != null)
+        {
+            meter.ApplyDrain(crashDrainAmount);
+        }
     }
 
     public void Crash()
@@ -39,25 +96,11 @@ public sealed class HandleCrash : MonoBehaviour
         {
             return;
         }
+
         restarting = true;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-    }
-    private void OnTriggerEnter(Collider other)
-    {
 
-        FuelTank tank = other.GetComponent<FuelTank>();
-        if (tank != null)
-        {
-            meter.ChangeFuel(tank.FuelAmount);
-            Destroy(other.gameObject);
-            return;
-        }
-        if (obstacles == null || !other.transform.IsChildOf(obstacles.transform))
-        {
-            return;
-        }
-
-        Crash();
-
+        SceneManager.LoadScene(
+            SceneManager.GetActiveScene().buildIndex
+        );
     }
 }
