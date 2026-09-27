@@ -14,9 +14,12 @@ public sealed class HandleCrash : MonoBehaviour
     private float crashDrainAmount = 0.5f;
 
     private bool restarting;
+    private FuelMeter fuelMeter;
 
     private void Awake()
     {
+        fuelMeter = GetComponent<FuelMeter>();
+
         Rigidbody body = GetComponent<Rigidbody>();
         body.isKinematic = true;
         body.useGravity = false;
@@ -52,6 +55,15 @@ public sealed class HandleCrash : MonoBehaviour
     {
         if (restarting)
         {
+            return;
+        }
+
+        FuelTank tank = other.GetComponent<FuelTank>();
+
+        if (tank != null)
+        {
+            fuelMeter.ChangeFuel(tank.FuelAmount);
+            Destroy(other.gameObject);
             return;
         }
 
