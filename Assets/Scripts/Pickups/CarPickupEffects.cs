@@ -22,6 +22,7 @@ public sealed class CarPickupEffects : MonoBehaviour
     public float LateralAccelerationMultiplier => runState.Effects.LateralAccelerationMultiplier;
     public float CurrentFuel => fuelState.CurrentFuel;
     public RandomPickupOutcome LastOutcome { get; private set; }
+    public int PickupCount { get; private set; }
 
     // The pursuit model needs the unmodified speeds; it applies the active effects itself.
     public void ConfigurePursuit(float vehicleBaseSpeed, float pursuerSpeed)
@@ -53,24 +54,33 @@ public sealed class CarPickupEffects : MonoBehaviour
                 {
                     fuelState.RefillToFull();
                     LastOutcome = outcome;
+                    PickupCount++;
                     return true;
                 }
 
                 LastOutcome = outcome;
-                return runState.TryCollectWithoutReward(PickupEffectType.ReverseSteering, duration);
+                bool reversed = runState.TryCollectWithoutReward(PickupEffectType.ReverseSteering, duration);
+                if (reversed)
+                    PickupCount++;
+                return reversed;
 
             case PickupEffectType.PartialFuel:
                 fuelState.Refill(50f);
                 LastOutcome = RandomPickupOutcome.FullFuel;
+                PickupCount++;
                 return true;
 
             case PickupEffectType.FullFuel:
                 fuelState.RefillToFull();
                 LastOutcome = RandomPickupOutcome.FullFuel;
+                PickupCount++;
                 return true;
 
             default:
-                return runState.TryCollectWithoutReward(effect, duration);
+                bool applied = runState.TryCollectWithoutReward(effect, duration);
+                if (applied)
+                    PickupCount++;
+                return applied;
         }
     }
 
@@ -96,5 +106,6 @@ public sealed class CarPickupEffects : MonoBehaviour
         runState.Reset();
         fuelState.Reset();
         LastOutcome = RandomPickupOutcome.None;
+        PickupCount = 0;
     }
 }
