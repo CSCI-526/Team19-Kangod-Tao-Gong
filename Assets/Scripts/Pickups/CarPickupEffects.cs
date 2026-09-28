@@ -80,17 +80,6 @@ public sealed class CarPickupEffects : MonoBehaviour
                     PickupCount++;
                 return reversed;
 
-            case PickupEffectType.PartialFuel:
-                fuelState.Refill(50f);
-                LastOutcome = RandomPickupOutcome.FullFuel;
-                PickupCount++;
-                return true;
-
-            case PickupEffectType.FullFuel:
-                fuelState.RefillToFull();
-                LastOutcome = RandomPickupOutcome.FullFuel;
-                PickupCount++;
-                return true;
 
             case PickupEffectType.Shield:
                 bool shieldedPickup = runState.TryGrantShield();
