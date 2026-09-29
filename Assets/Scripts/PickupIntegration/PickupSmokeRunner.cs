@@ -111,8 +111,8 @@ public sealed class PickupSmokeRunner : MonoBehaviour
         while (effects.ActiveEffect != PickupEffectType.None && Time.realtimeSinceStartup < deadline)
             yield return null;
         Require(effects.ActiveEffect == PickupEffectType.None, "Timed effect expires in actual game loop");
-        Require(effects.RunState.BankedPickupScore == 85 && effects.RunState.PendingBonus == 0,
-            "Natural expiry banks the pickup reward and completion bonus exactly once");
+        Require(effects.RunState.BankedPickupScore == 0 && effects.RunState.PendingBonus == 0,
+            "Pickup effects do not change the score");
 
         x = car.transform.position.x;
         InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.LeftArrow));
@@ -120,7 +120,7 @@ public sealed class PickupSmokeRunner : MonoBehaviour
         InputSystem.QueueStateEvent(keyboard, new KeyboardState());
         yield return new WaitForSeconds(0.25f);
         Require(car.transform.position.x < x - 0.1f, "Expiry restores normal left steering");
-        Require(effects.RunState.BankedPickupScore == 85, "Later frames do not pay the completed reward again");
+        Require(effects.RunState.BankedPickupScore == 0, "Later frames do not change the score");
 
         effects.Apply(PickupEffectType.ReverseSteering);
         int beforeCancel = effects.RunState.BankedPickupScore;
@@ -177,8 +177,8 @@ public sealed class PickupSmokeRunner : MonoBehaviour
         int beforeReplacement = effects.RunState.BankedPickupScore;
         effects.Apply(PickupEffectType.Boost, 0.2f);
         yield return new WaitForSeconds(0.35f);
-        Require(effects.RunState.BankedPickupScore == beforeReplacement + 85,
-            "Replacing an effect discards its old pending reward; only the new reward matures");
+        Require(effects.RunState.BankedPickupScore == beforeReplacement,
+            "Replacing an effect does not change the score");
         effects.Clear();
 
         SpawnPickup(car.transform, PickupEffectType.Shield, 5f);
@@ -196,47 +196,42 @@ public sealed class PickupSmokeRunner : MonoBehaviour
             "Shield blocks the next real obstacle collision");
         Require(!effects.ShieldReady && effects.RunState.CrashSlowRemaining <= 0f
             && Mathf.Abs(effects.RunState.PursuitGap - gapBeforeShieldedCrash) < 0.5f,
-            "Shield collision does not start slowdown or close the police gap");
+            "Shield collision does not drain proximity or slow the car");
         shieldWall.SetActive(false);
 
         float gapBeforeCrash = effects.RunState.PursuitGap;
         GameObject wall = SpawnObstacle(car.transform, obstacles.transform);
         deadline = Time.realtimeSinceStartup + 4f;
-        while (effects.RunState.CrashSlowRemaining <= 0f && Time.realtimeSinceStartup < deadline)
+        while (effects.RunState.CollisionProtectionRemaining <= 0f
+            && !effects.RunState.IsGameOver && Time.realtimeSinceStartup < deadline)
             yield return null;
-        Require(effects.RunState.CrashSlowRemaining > 0f, "Actual obstacle collision triggers temporary slowdown");
+        Require(effects.RunState.CollisionProtectionRemaining > 0f,
+            "Actual obstacle collision starts crash recovery");
         Require(!effects.RunState.IsGameOver && SceneManager.GetActiveScene().handle == initialHandle,
             "A first collision keeps the current run alive without scene reload");
+        Require(effects.RunState.CrashSlowRemaining <= 0f
+            && Mathf.Abs(effects.ForwardSpeedMultiplier - 1f) < 0.01f,
+            "A crash does not slow the car");
+        Require(effects.RunState.PursuitGap < gapBeforeCrash,
+            "A crash drains the proximity gap");
         wall.SetActive(false);
-        z = car.transform.position.z;
-        started = Time.time;
-        yield return new WaitForSeconds(0.5f);
-        float slowedSpeed = (car.transform.position.z - z) / (Time.time - started);
-        Require(slowedSpeed < normalSpeed * 0.5f && slowedSpeed > normalSpeed * 0.2f,
-            "Crash slowdown affects the actual vehicle movement");
-        Require(effects.RunState.PursuitGap < gapBeforeCrash, "Police close in during the actual slowdown");
-
-        deadline = Time.realtimeSinceStartup + 4f;
-        while (effects.RunState.RecoveryWaitRemaining > 0f && Time.realtimeSinceStartup < deadline)
-            yield return null;
-        float recoveringGap = effects.RunState.PursuitGap;
-        yield return new WaitForSeconds(0.7f);
-        Require(effects.RunState.PursuitGap > recoveringGap, "Clean driving gradually recovers pursuit distance");
-
-        // Repeat real trigger collisions to reach capture, without directly changing the model's gap.
-        for (int impact = 0; impact < 9 && !effects.RunState.IsGameOver; impact++)
+        for (int impact = 0; impact < 4 && !effects.RunState.IsGameOver; impact++)
         {
+            deadline = Time.realtimeSinceStartup + 4f;
+            while (effects.RunState.CollisionProtectionRemaining > 0f
+                && !effects.RunState.IsGameOver && Time.realtimeSinceStartup < deadline)
+                yield return null;
+
             wall = SpawnObstacle(car.transform, obstacles.transform);
-            deadline = Time.realtimeSinceStartup + 3f;
-            while (!effects.RunState.IsGameOver && effects.RunState.CrashSlowRemaining <= 0f
-                && Time.realtimeSinceStartup < deadline) yield return null;
-            Require(effects.RunState.IsGameOver || effects.RunState.CrashSlowRemaining > 0f,
-                "Repeated test obstacle reaches the collision handler");
+            deadline = Time.realtimeSinceStartup + 4f;
+            while (!effects.RunState.IsGameOver
+                && effects.RunState.CollisionProtectionRemaining <= 0f
+                && Time.realtimeSinceStartup < deadline)
+                yield return null;
             wall.SetActive(false);
-            yield return new WaitForSeconds(1.7f);
         }
         Require(effects.RunState.IsGameOver && effects.RunState.PursuitGap == 0f,
-            "Accumulated collision slowdowns allow police to catch the car");
+            "Repeated collisions drain proximity and end the run");
         Require(effects.RunState.PendingBonus == 0 && effects.ActiveEffect == PickupEffectType.None,
             "Capture removes unresolved pickup effects and rewards");
         Require(SceneManager.GetActiveScene().handle == initialHandle, "Game over waits for an explicit restart");

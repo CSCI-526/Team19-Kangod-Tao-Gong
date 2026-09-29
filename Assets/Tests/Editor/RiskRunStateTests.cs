@@ -10,18 +10,28 @@ public sealed class RiskRunStateTests
     }
 
     [Test]
-    public void FirstCrash_DoesNotImmediatelyConsumeDistanceOrEndTheRun()
+    public void FirstCrash_DrainsHalfTheGapWithoutSlowingOrEndingTheRun()
     {
         var run = new RiskRunState();
         Assert.That(run.TryCrash(), Is.True);
-        Assert.That(run.PursuitGap, Is.EqualTo(45f));
-        Assert.That(run.IsGameOver, Is.False);
-        Assert.That(run.CrashSpeedMultiplier, Is.EqualTo(0.35f));
-
-        run.Tick(1.6f);
-        Assert.That(run.PursuitGap, Is.EqualTo(31f).Within(0.0001f));
+        Assert.That(run.PursuitGap, Is.EqualTo(22.5f));
         Assert.That(run.IsGameOver, Is.False);
         Assert.That(run.CrashSpeedMultiplier, Is.EqualTo(1f));
+
+        run.Tick(1.6f);
+        Assert.That(run.PursuitGap, Is.EqualTo(22.5f).Within(0.0001f));
+        Assert.That(run.IsGameOver, Is.False);
+        Assert.That(run.CrashSpeedMultiplier, Is.EqualTo(1f));
+    }
+
+    [Test]
+    public void Crash_DrainsVisibleProximityEvenAfterRecoveryBuffer()
+    {
+        var run = new RiskRunState();
+        run.TryRestorePursuitGap(30f);
+        Assert.That(run.PursuitGap, Is.EqualTo(75f));
+        Assert.That(run.TryCrash(), Is.True);
+        Assert.That(run.PursuitGap, Is.EqualTo(22.5f).Within(0.0001f));
     }
 
     [Test]
@@ -31,15 +41,17 @@ public sealed class RiskRunStateTests
         run.TryCrash();
         run.Tick(0.5f);
         Assert.That(run.TryCrash(), Is.False);
-        Assert.That(run.CrashSlowRemaining, Is.EqualTo(1.1f).Within(0.0001f));
+        Assert.That(run.CrashSlowRemaining, Is.Zero);
         Assert.That(run.CollisionProtectionRemaining, Is.EqualTo(0.5f));
         Assert.That(run.RecoveryWaitRemaining, Is.EqualTo(2.1f).Within(0.0001f));
 
         run.Tick(0.5f);
         Assert.That(run.TryCrash(), Is.True);
-        Assert.That(run.CrashSlowRemaining, Is.EqualTo(1.6f));
-        Assert.That(run.CollisionProtectionRemaining, Is.EqualTo(1f));
-        Assert.That(run.RecoveryWaitRemaining, Is.EqualTo(2.6f));
+        Assert.That(run.IsGameOver, Is.True);
+        Assert.That(run.PursuitGap, Is.Zero);
+        Assert.That(run.CrashSlowRemaining, Is.Zero);
+        Assert.That(run.CollisionProtectionRemaining, Is.Zero);
+        Assert.That(run.RecoveryWaitRemaining, Is.Zero);
     }
 
     [Test]
@@ -79,9 +91,9 @@ public sealed class RiskRunStateTests
         var run = new RiskRunState();
         run.TryCrash();
         run.Tick(RiskRunState.CrashSlowDuration);
-        Assert.That(run.PursuitGap, Is.EqualTo(31f).Within(0.0001f));
+        Assert.That(run.PursuitGap, Is.EqualTo(22.5f).Within(0.0001f));
         Assert.That(run.TryRestorePursuitGap(RiskRunState.PickupProximityRecovery), Is.True);
-        Assert.That(run.PursuitGap, Is.EqualTo(68.5f).Within(0.0001f));
+        Assert.That(run.PursuitGap, Is.EqualTo(60f).Within(0.0001f));
     }
 
     [Test]
@@ -91,9 +103,9 @@ public sealed class RiskRunStateTests
         run.TryCrash();
         run.Tick(1.6f);
         run.Tick(0.5f);
-        Assert.That(run.PursuitGap, Is.EqualTo(31f).Within(0.0001f));
+        Assert.That(run.PursuitGap, Is.EqualTo(22.5f).Within(0.0001f));
         run.Tick(1.5f);
-        Assert.That(run.PursuitGap, Is.EqualTo(32f).Within(0.0001f));
+        Assert.That(run.PursuitGap, Is.EqualTo(23f).Within(0.0001f));
     }
 
     [Test]
@@ -110,10 +122,10 @@ public sealed class RiskRunStateTests
         littleRecovery.Tick(1.6f);
         moreRecovery.Tick(1.6f);
 
-        Assert.That(littleRecovery.PursuitGap, Is.EqualTo(17f).Within(0.0001f));
-        Assert.That(moreRecovery.PursuitGap, Is.EqualTo(21.25f).Within(0.0001f));
-        Assert.That(moreRecovery.PursuitGap - littleRecovery.PursuitGap,
-            Is.EqualTo(4.25f).Within(0.0001f));
+        Assert.That(littleRecovery.IsGameOver, Is.True);
+        Assert.That(littleRecovery.PursuitGap, Is.Zero);
+        Assert.That(moreRecovery.PursuitGap, Is.EqualTo(4.25f).Within(0.0001f));
+        Assert.That(moreRecovery.IsGameOver, Is.False);
     }
 
     [Test]
@@ -130,7 +142,7 @@ public sealed class RiskRunStateTests
         for (int i = 0; i < 40; i++)
             sliced.Tick(0.1f);
 
-        Assert.That(oneTick.PursuitGap, Is.EqualTo(35.34f).Within(0.001f));
+        Assert.That(oneTick.PursuitGap, Is.EqualTo(23.9f).Within(0.001f));
         Assert.That(sliced.PursuitGap, Is.EqualTo(oneTick.PursuitGap).Within(0.001f));
         Assert.That(sliced.CrashSlowRemaining, Is.EqualTo(oneTick.CrashSlowRemaining));
         Assert.That(sliced.RecoveryWaitRemaining, Is.EqualTo(oneTick.RecoveryWaitRemaining));
@@ -167,7 +179,7 @@ public sealed class RiskRunStateTests
         run.Tick(1.5f);
         run.Tick(0.2f);
         Assert.That(run.LastTickForwardDistance,
-            Is.EqualTo(15f * 0.35f * 0.1f + 15f * 0.1f).Within(0.0001f));
+            Is.EqualTo(15f * 0.2f).Within(0.0001f));
     }
 
     [Test]
@@ -202,9 +214,9 @@ public sealed class RiskRunStateTests
         run.TryCollect(PickupEffectType.Boost);
         run.TryCrash();
         run.Tick(2.6f);
-        Assert.That(run.PursuitGap, Is.EqualTo(33.94f).Within(0.0001f));
+        Assert.That(run.PursuitGap, Is.EqualTo(22.5f).Within(0.0001f));
         run.Tick(1f);
-        Assert.That(run.PursuitGap, Is.EqualTo(40.19f).Within(0.0001f));
+        Assert.That(run.PursuitGap, Is.EqualTo(28.75f).Within(0.0001f));
     }
 
     [Test]
@@ -326,8 +338,8 @@ public sealed class RiskRunStateTests
         run.TryCollect(PickupEffectType.Boost);
         run.TryCrash();
         run.Tick(elapsedSeconds);
-        Assert.That(run.PursuitGap, Is.EqualTo(45f));
-        Assert.That(run.CrashSlowRemaining, Is.EqualTo(1.6f));
+        Assert.That(run.PursuitGap, Is.EqualTo(22.5f));
+        Assert.That(run.CrashSlowRemaining, Is.Zero);
         Assert.That(run.CollisionProtectionRemaining, Is.EqualTo(1f));
         Assert.That(run.RecoveryWaitRemaining, Is.EqualTo(2.6f));
         Assert.That(run.Effects.RemainingSeconds, Is.EqualTo(5f));

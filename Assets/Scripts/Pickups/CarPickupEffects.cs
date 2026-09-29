@@ -98,9 +98,9 @@ public sealed class CarPickupEffects : MonoBehaviour
         }
     }
 
-    public bool TryCrash()
+    public bool TryCrash(float proximityDrain = RiskRunState.DefaultCrashProximityDrain)
     {
-        return isActiveAndEnabled && runState.TryCrash();
+        return isActiveAndEnabled && runState.TryCrash(proximityDrain);
     }
 
     public bool TryConsumeShield()

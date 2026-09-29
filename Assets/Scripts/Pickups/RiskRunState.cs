@@ -6,7 +6,9 @@ public sealed class RiskRunState
     public const float InitialPursuitGap = 45f;
     public const float MaximumPursuitGap = 75f;
     public const float PickupProximityRecovery = MaximumPursuitGap * 0.5f;
-    public const float CrashSlowDuration = 1.6f;
+    // Collisions drain the proximity bar but do not slow the car.
+    public const float CrashSlowDuration = 0f;
+    public const float DefaultCrashProximityDrain = 0.5f;
     public const float CollisionProtectionDuration = 1f;
     public const float RecoveryWaitDuration = 2.6f;
     public const int PickupReward = 10;
@@ -31,7 +33,7 @@ public sealed class RiskRunState
     public int BankedPickupScore { get; private set; }
     public int PendingBonus { get; private set; }
     public float LastTickForwardDistance { get; private set; }
-    public float CrashSpeedMultiplier => IsGameOver ? 0f : crashSlowRemaining > 0d ? 0.35f : 1f;
+    public float CrashSpeedMultiplier => IsGameOver ? 0f : 1f;
 
     public RiskRunState()
     {
@@ -108,13 +110,28 @@ public sealed class RiskRunState
         return true;
     }
 
-    /// <summary>Impact costs forward speed, never a fixed number of pursuit-distance points.</summary>
-    public bool TryCrash()
+    /// <summary>Impact drains part of the proximity bar without slowing the car.</summary>
+    public bool TryCrash(float normalizedProximityDrain = DefaultCrashProximityDrain)
     {
-        if (IsGameOver || collisionProtectionRemaining > 0d)
+        if (IsGameOver || collisionProtectionRemaining > 0d
+            || !IsFinite(normalizedProximityDrain) || normalizedProximityDrain <= 0f)
             return false;
 
-        crashSlowRemaining = CrashSlowDuration;
+        double clampedDrain = Math.Min(1d, normalizedProximityDrain);
+        // ChaseMeter exposes proximity as a 0..1 value. Discard any buffer
+        // above the visible meter before applying the normalized collision cost
+        // so a crash always produces a visible bar change.
+        double visibleGap = Math.Min(InitialPursuitGap, pursuitGap);
+        pursuitGap = Math.Max(0d, visibleGap - InitialPursuitGap * clampedDrain);
+        if (pursuitGap <= 0d)
+        {
+            IsGameOver = true;
+            Effects.Clear();
+            PendingBonus = 0;
+            return true;
+        }
+
+        crashSlowRemaining = 0d;
         collisionProtectionRemaining = CollisionProtectionDuration;
         recoveryWaitRemaining = RecoveryWaitDuration;
         return true;

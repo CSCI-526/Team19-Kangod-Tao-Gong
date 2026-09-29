@@ -151,7 +151,7 @@ public sealed class AutoDriveCar : MonoBehaviour
                 return;
             }
 
-            // RiskRunState is the single clock for pursuit, crash slowdown and
+                // RiskRunState is the single clock for pursuit, crash recovery and
             // effect expiry. Reuse its integrated distance so the car and the
             // chase model cross the same boundaries on the same frame.
             forwardDistance = pickupEffects.RunState.LastTickForwardDistance;

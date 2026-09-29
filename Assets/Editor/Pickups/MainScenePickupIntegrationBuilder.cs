@@ -70,7 +70,6 @@ public static class MainScenePickupIntegrationBuilder
 
         PickupHUD hud = EnsureComponent<PickupHUD>(system);
         SetReference(hud, "effects", effects);
-        SetValue(hud, "showControls", true);
 
         if (!EditorSceneManager.SaveScene(scene))
         {

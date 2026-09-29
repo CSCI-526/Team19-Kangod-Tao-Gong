@@ -5,7 +5,7 @@ public sealed class FuelAndRandomPickupTests
     [Test]
     public void FuelState_ConsumesAndClampsAtZero()
     {
-        var fuel = new FuelState();
+        var fuel = new FuelState(40f);
 
         fuel.Tick(5f, 4f);
         Assert.That(fuel.CurrentFuel, Is.EqualTo(80f));

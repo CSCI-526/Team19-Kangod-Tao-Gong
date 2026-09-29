@@ -98,7 +98,7 @@ public sealed class HandleCrash : MonoBehaviour
                     return;
                 }
 
-                pickupEffects.TryCrash();
+                pickupEffects.TryCrash(crashDrainAmount);
                 return;
             }
 
@@ -134,7 +134,7 @@ public sealed class HandleCrash : MonoBehaviour
                 return;
             }
 
-            pickupEffects.TryCrash();
+            pickupEffects.TryCrash(crashDrainAmount);
             return;
         }
 
@@ -158,10 +158,9 @@ public sealed class HandleCrash : MonoBehaviour
                 return;
             }
 
-            // With the recovery model enabled, impact is a temporary slowdown.
-            // Capture is represented by RiskRunState.IsGameOver and is restarted
-            // explicitly with R by RiskRunController.
-            pickupEffects.TryCrash();
+            // A collision drains proximity. The run stays in the same scene and
+            // is restarted explicitly with R after capture.
+            pickupEffects.TryCrash(crashDrainAmount);
             return;
         }
 

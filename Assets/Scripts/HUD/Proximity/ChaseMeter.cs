@@ -79,7 +79,7 @@ public sealed class ChaseMeter : MonoBehaviour
     {
         if (pickupEffects != null && pickupEffects.isActiveAndEnabled)
         {
-            pickupEffects.TryCrash();
+            pickupEffects.TryCrash(amount);
             return;
         }
 

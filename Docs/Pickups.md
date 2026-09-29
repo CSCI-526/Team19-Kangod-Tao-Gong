@@ -10,12 +10,12 @@ The current local slice deliberately leaves pickup score out of the gameplay pat
 | Reversed controls | Reverses steering for 5 seconds. Fuel is unchanged and no score is added. |
 | One-hit shield | Blocks the next collision that would start crash recovery. It is consumed once and cannot be stacked. |
 
-The current main-scene slice uses the local `FuelState` owned by `CarPickupEffects`; it does not add a second score authority or a pickup score bonus. If the team later lands a separate fuel authority, reconcile that interface before merging. The latest team baseline was opened with Unity **6000.3.23f1** and the main scene was smoke-tested in Play Mode: the pickup spawned, the HUD showed the fuel and hidden-result state, and an obstacle contact showed the temporary slowdown instead of an immediate restart. A full random-result collection and WebGL build are still pending.
+The current main-scene slice uses the local `FuelState` owned by `CarPickupEffects`; it does not add a second score authority or a pickup score bonus. The persistent pickup panel was removed so it no longer covers the fuel or proximity bars; only the short center result/capture popup remains. The proximity recovery popup uses `PROXIMITY RESTORED` and no longer shows the old `GAP` wording or the bottom control/probability panel. The saved `PickupPlayground.unity` test scene was synchronized with the main scene after a playtest showed that its older copy had only the score header; it now contains the ProximityHUD, FuelBar, FuelMeter, ChaseMeter, and FuelTankSpawner wiring too.
 
 The `+10` pickup reward, `+75` completion reward, and Space forfeiture rules described in the historical section below are retained only for comparison with the earlier prototype. They are not part of this reporting slice.
 
-Local development branch: `codex/pickup-effects-on-team-main`.
-Base: `jassu75/Money-Heist` main at `e6775599da3e3c1360b4e1b43a393cfb9ee330f5`.
+Local development branch: `codex/final-main-merge-check`.
+Base: latest local `main` snapshot at `8aa3b0464bb82659aa10bad97bafba6eb2982e05`. The authenticated personal Chrome session verified remote `main` at `b34c307168a7df20fc22ae3521272bcd6e1e97c7` (`fixed HUD placement`); the layout intent was integrated locally, with the final FuelBar placed in the upper-left and the proximity bar in the upper-right so the two bars do not overlap. Command-line `git pull` remains unverified because Git Credential Manager could not persist the browser login.
 Editor: Unity **6000.3.23f1**.
 
 ## Historical behavior from the earlier reward prototype
@@ -30,7 +30,7 @@ Optional plain cube pickups give 10 points immediately and apply one random temp
 
 Completing the 5-second effect earns another 75 points. Press **Space** to cancel early and forfeit that pending 75; already earned points remain. One effect is active at a time. A new pickup discards the old pending bonus, grants its own 10 points, and starts a new effect and 75-point challenge. This applies to repeated pickups of the same type too. Timers use scaled game time.
 
-Colliding with an obstacle slows the car to 35% speed for 1.6 seconds. Police distance changes continuously using the same forward motion as the car, instead of subtracting a fixed health amount per impact. Collision protection lasts 1 second; contacts with the same placed obstacle are counted once. After impact, gaining distance is held for 2.6 seconds, then clean driving recovers distance gradually. Police travel at 14 m/s, the base car at 15 m/s; the gap starts at 45 m and is capped at 75 m. These are initial tuning values, not playtest findings.
+Colliding with an obstacle no longer slows the car. A new collision deducts `0.5` normalized proximity; from the default 45 m visible meter this becomes 22.5 m. Any recovery buffer above the visible meter is discarded before the deduction so the hit is visible. A 1-second duplicate-contact protection window follows. The recovery wait still holds positive proximity recovery for 2.6 seconds, after which clean driving can recover proximity. Police travel at 14 m/s and the base car at 15 m/s; proximity starts at 45 m and is capped at 75 m. These are implementation values, not playtest findings.
 
 At 0 m the run ends, pending rewards are lost, and movement and score stop. Press **R** to restart after capture. There is no fixed lives counter. The score combines forward road distance and already earned pickup points; sideways weaving does not farm distance points in this prototype. Pursuit is represented by functional text, not a separate police AI.
 
@@ -49,7 +49,7 @@ Use **Money Heist > Pickups > Create or Refresh Test Scene**, then play `Assets/
 The integration is now present in `Assets/Scenes/GetawayChase.unity` on the local branch:
 
 1. `CarPickupEffects` and `RiskRunController` are on the player car beside `AutoDriveCar`.
-2. `HandleCrash` and `ChaseMeter` route impacts through the recovery model, so a collision slows the run and capture requires an explicit **R** restart.
+2. `HandleCrash` and `ChaseMeter` route impacts through the recovery model, so a collision drains proximity without changing the car speed; capture requires an explicit **R** restart.
 3. A separate `PickupSystem` root owns `PickupSpawner` and `PickupHUD`. It references the existing road, player, obstacle spawner, and `MysteryPickup` prefab; pickups remain outside the obstacle-spawner hierarchy.
 4. `PickupSpawner` configures the special pickup as a 50% reversed-controls, 25% proximity-recovery, or 25% one-hit-shield result. The team `ScoreMeter` remains unchanged, so this slice adds no pickup score.
 5. Spacing and effect duration still need player feedback before the team decides whether to merge the tuning.
@@ -58,9 +58,9 @@ The integration is now present in `Assets/Scenes/GetawayChase.unity` on the loca
 
 ## Validation commands
 
-The source-level check for the current slice passed: `FuelState` consumed and clamped fuel correctly, a seeded 1,000-draw sample produced all three random outcomes, and proximity recovery adds half the maximum gap while clamping at the maximum. Unit coverage also checks that a shield blocks one new collision, is preserved during the built-in collision protection window, and resets with the run. This does not verify Unity scene wiring or actual input/collider behavior.
+The source-level check for the current slice passed: `FuelState` consumed and clamped fuel correctly, a seeded 1,000-draw sample produced all three random outcomes, proximity recovery adds half the maximum capacity while clamping at the maximum, and a collision drains proximity without changing the speed multiplier. Unit coverage also checks that a shield blocks one new collision, is preserved during the built-in collision protection window, and resets with the run. This does not verify Unity scene wiring or actual input/collider behavior.
 
-The risk/recovery version passed **62 state/lifecycle tests and 38 real input/physics checks**, using **6000.3.22f1 in a separate temporary copy**. Checks include cancellation, payout, collision slowdown, distance recovery, capture, stopped movement/score, and R restart. All 23 C# source files matched the tested copy by SHA-256. Those automated checks are historical; the current **6000.3.23f1** main-scene smoke result is recorded above, while a full automated rerun on the team snapshot remains pending. These checks establish behavior, not player enjoyment or balanced tuning.
+The earlier risk/recovery version passed **62 state/lifecycle tests and 38 real input/physics checks** in a separate 6000.3.22f1 copy; those results covered the old collision-slowdown design and remain historical. A prior 6000.3.23f1 editor session had recompiled the earlier slice, but the current feedback-fix batch attempt stopped during license initialization before a new compile or test run. The focused pure C# and static checks were rerun after the UI and collision changes. A user runtime playtest then confirmed normal collision speed, proximity drain, capture at zero, and **R** restart in the current scene. Automated Play Mode and WebGL reruns remain an evidence gap. These checks establish behavior, not player enjoyment or balanced tuning.
 
 A Development WebGL build of this risk/recovery version also succeeded. The local output is `Builds/LocalPreview-RiskRun-6000.3.22f1` (ignored by Git), served at `http://127.0.0.1:8766/`. Browser checks confirmed scene/text, continuing after a collision, capture, and R restart through the focused canvas. No console errors/warnings were reported during that check. The full mechanic assertions above were run in the Editor. This is a local preview, not a GitHub Pages deployment; the earlier pickup-only preview is preserved separately.
 
