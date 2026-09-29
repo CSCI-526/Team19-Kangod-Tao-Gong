@@ -178,6 +178,12 @@ public sealed class HandleCrash : MonoBehaviour
             return;
         }
 
+        if (pickupEffects != null && pickupEffects.isActiveAndEnabled)
+        {
+            pickupEffects.EndRun();
+            return;
+        }
+
         if (meter != null)
         {
             meter.ApplyDrain(1f);
