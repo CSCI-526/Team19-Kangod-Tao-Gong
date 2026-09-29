@@ -55,6 +55,20 @@ public sealed class RiskRunStateTests
     }
 
     [Test]
+    public void FuelDepletion_EndsRunEvenAfterProximityRecovery()
+    {
+        var run = new RiskRunState();
+        Assert.That(run.TryRestorePursuitGap(RiskRunState.PickupProximityRecovery), Is.True);
+        Assert.That(run.PursuitGap, Is.EqualTo(RiskRunState.MaximumPursuitGap));
+
+        Assert.That(run.EndRun(), Is.True);
+        Assert.That(run.IsGameOver, Is.True);
+        Assert.That(run.PursuitGap, Is.Zero);
+        Assert.That(run.CrashSpeedMultiplier, Is.Zero);
+        Assert.That(run.EndRun(), Is.False);
+    }
+
+    [Test]
     public void Shield_BlocksOneNewCollisionWithoutStartingRecovery()
     {
         var run = new RiskRunState();

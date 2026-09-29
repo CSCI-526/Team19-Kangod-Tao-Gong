@@ -103,6 +103,11 @@ public sealed class CarPickupEffects : MonoBehaviour
         return isActiveAndEnabled && runState.TryCrash(proximityDrain);
     }
 
+    public bool EndRun()
+    {
+        return isActiveAndEnabled && runState.EndRun();
+    }
+
     public bool TryConsumeShield()
     {
         return isActiveAndEnabled && runState.TryConsumeShield();
