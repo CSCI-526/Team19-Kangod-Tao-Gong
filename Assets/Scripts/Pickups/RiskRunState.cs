@@ -137,6 +137,19 @@ public sealed class RiskRunState
         return true;
     }
 
+    /// <summary>Ends the run immediately for non-collision failures such as fuel depletion.</summary>
+    public bool EndRun()
+    {
+        if (IsGameOver)
+            return false;
+
+        pursuitGap = 0d;
+        IsGameOver = true;
+        Effects.Clear();
+        PendingBonus = 0;
+        return true;
+    }
+
     /// <summary>
     /// Integrates relative forward speed across every effect and recovery boundary.
     /// During the post-impact wait, distance may shrink but cannot increase.
