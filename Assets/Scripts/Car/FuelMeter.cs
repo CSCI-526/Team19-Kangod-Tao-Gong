@@ -28,7 +28,7 @@ public sealed class FuelMeter : MonoBehaviour
         if (remainingFuel <= 0)
         {
             enabled = false;
-            crash.Crash();
+            crash.OutOfFuel();
         }
     }
 

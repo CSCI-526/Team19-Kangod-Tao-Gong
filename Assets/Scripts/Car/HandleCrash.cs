@@ -170,4 +170,17 @@ public sealed class HandleCrash : MonoBehaviour
             SceneManager.GetActiveScene().buildIndex
         );
     }
+
+    public void OutOfFuel()
+    {
+        if (restarting)
+        {
+            return;
+        }
+
+        if (meter != null)
+        {
+            meter.ApplyDrain(1f);
+        }
+    }
 }
